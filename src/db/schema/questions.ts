@@ -21,7 +21,11 @@ export const questionOptions = mysqlTable('question_options', {
   sortOrder: int('sortOrder').default(0).notNull(),
 })
 
-export const questionsRelations = relations(questions, ({ many }) => ({
+export const questionsRelations = relations(questions, ({ one, many }) => ({
+  card: one(moduleCards, {
+    fields: [questions.cardId],
+    references: [moduleCards.id],
+  }),
   options: many(questionOptions),
 }))
 

@@ -1,18 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { toast } from 'sonner'
 import {
   Plus,
   Edit2,
@@ -24,25 +15,38 @@ import {
   Clock,
   Users,
   TrendingUp,
+  Loader2,
 } from 'lucide-react'
-
-// Mock data removed - components will fetch from database
-// TODO: Implement database query to fetch modules for admin dashboard
-const MOCK_MODULES: any[] = []
-
-type ModuleStatus = 'published' | 'draft' | 'pending'
+import { ModuleWizard } from './admin/module-wizard'
+import type { Module, ModuleStatus } from '@/types/module'
 
 export function AdminModuleEditor() {
-  const [modules, setModules] = useState(MOCK_MODULES)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [modules, setModules] = useState<Module[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<'all' | ModuleStatus>('all')
-  const [showNewModuleDialog, setShowNewModuleDialog] = useState(false)
-  const [newModule, setNewModule] = useState({
-    title: '',
-    description: '',
-    difficulty: 'Beginner',
-    category: 'General',
-  })
+  
+  // Wizard state
+  const [isWizardOpen, setIsWizardOpen] = useState(false)
+  const [moduleToEdit, setModuleToEdit] = useState<any>(null)
+
+  const fetchModules = async () => {
+    setIsLoading(true)
+    try {
+      const res = await fetch('/api/admin/modules')
+      if (!res.ok) throw new Error('Failed to fetch modules')
+      const data = await res.json()
+      setModules(data)
+    } catch (error) {
+      console.error(error)
+      toast.error('Could not load modules.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchModules()
+  }, [])
 
   const filteredModules =
     filterStatus === 'all' ? modules : modules.filter((m) => m.status === filterStatus)
@@ -60,27 +64,68 @@ export function AdminModuleEditor() {
     }
   }
 
-  const handleDeleteModule = (id: number) => {
-    setModules(modules.filter((m) => m.id !== id))
+  const handleDeleteModule = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this module? This cannot be undone.')) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/admin/modules/${id}`, {
+        method: 'DELETE',
+      })
+      
+      if (!res.ok) throw new Error('Failed to delete')
+      
+      setModules(modules.filter((m) => m.id !== id))
+      toast.success('Module deleted')
+    } catch (error) {
+      console.error(error)
+      toast.error('Failed to delete module')
+    }
   }
 
-  const handleAddModule = () => {
-    const newId = Math.max(...modules.map((m) => m.id), 0) + 1
-    setModules([
-      ...modules,
-      {
-        id: newId,
-        title: newModule.title,
-        status: 'draft',
-        author: 'Admin',
-        created: new Date().toISOString().split('T')[0],
-        participants: 0,
-        avgScore: 0,
-        views: 0,
-      },
-    ])
-    setShowNewModuleDialog(false)
-    setNewModule({ title: '', description: '', difficulty: 'Beginner', category: 'General' })
+  const handleEditModule = async (id: number) => {
+    try {
+      toast.info('Loading module details...')
+      const res = await fetch(`/api/admin/modules/${id}`)
+      if (!res.ok) throw new Error('Failed to fetch module details')
+      const fullModule = await res.json()
+      
+      setModuleToEdit(fullModule)
+      setIsWizardOpen(true)
+    } catch (error) {
+      console.error(error)
+      toast.error('Failed to load module for editing')
+    }
+  }
+
+  const openNewModuleWizard = () => {
+    setModuleToEdit(null)
+    setIsWizardOpen(true)
+  }
+
+  const closeWizard = () => {
+    setIsWizardOpen(false)
+    setModuleToEdit(null)
+  }
+
+  const handleWizardComplete = () => {
+    closeWizard()
+    fetchModules()
+  }
+
+  if (isWizardOpen) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-6xl mx-auto py-8 px-4">
+          <ModuleWizard 
+            initialModule={moduleToEdit} 
+            onCancel={closeWizard} 
+            onComplete={handleWizardComplete} 
+          />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -93,87 +138,10 @@ export function AdminModuleEditor() {
               <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
               <p className="text-foreground/60 mt-1">Create, edit, and manage learning modules</p>
             </div>
-            <Dialog open={showNewModuleDialog} onOpenChange={setShowNewModuleDialog}>
-              <DialogTrigger asChild>
-                <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-                  <Plus className="h-5 w-5" />
-                  New Module
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New Module</DialogTitle>
-                  <DialogDescription>Fill in the details to create a new learning module</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Module Title</label>
-                    <Input
-                      placeholder="e.g., Ancient Rome"
-                      value={newModule.title}
-                      onChange={(e) => setNewModule({ ...newModule, title: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Description</label>
-                    <textarea
-                      placeholder="Describe the module..."
-                      value={newModule.description}
-                      onChange={(e) => setNewModule({ ...newModule, description: e.target.value })}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid gap-4 grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Difficulty</label>
-                      <select
-                        value={newModule.difficulty}
-                        onChange={(e) => setNewModule({ ...newModule, difficulty: e.target.value })}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
-                      >
-                        <option>Beginner</option>
-                        <option>Intermediate</option>
-                        <option>Advanced</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Category</label>
-                      <select
-                        value={newModule.category}
-                        onChange={(e) => setNewModule({ ...newModule, category: e.target.value })}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
-                      >
-                        <option>General</option>
-                        <option>History</option>
-                        <option>Science</option>
-                        <option>Art & Culture</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <Button
-                      onClick={handleAddModule}
-                      disabled={!newModule.title}
-                      className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-                    >
-                      Create Module
-                    </Button>
-                    <Button
-                      onClick={() => setShowNewModuleDialog(false)}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={openNewModuleWizard} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Plus className="h-5 w-5" />
+              New Module
+            </Button>
           </div>
         </div>
 
@@ -210,10 +178,10 @@ export function AdminModuleEditor() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-yellow-600" />
-                  <p className="text-sm font-medium text-foreground/60">Pending Review</p>
+                  <p className="text-sm font-medium text-foreground/60">Drafts</p>
                 </div>
                 <p className="text-3xl font-bold text-foreground">
-                  {modules.filter((m) => m.status === 'pending').length}
+                  {modules.filter((m) => m.status === 'draft').length}
                 </p>
               </div>
             </CardContent>
@@ -263,92 +231,74 @@ export function AdminModuleEditor() {
           </CardHeader>
 
           <CardContent>
-            <div className="space-y-3">
-              {filteredModules.length > 0 ? (
-                filteredModules.map((module) => (
-                  <div key={module.id} className="flex items-center justify-between gap-4 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-foreground truncate">{module.title}</h3>
-                        <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${getStatusColor(module.status)}`}>
-                          {module.status}
-                        </span>
+            {isLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredModules.length > 0 ? (
+                  filteredModules.map((module) => (
+                    <div key={module.id} className="flex items-center justify-between gap-4 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-foreground truncate">{module.title}</h3>
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${getStatusColor(module.status)}`}>
+                            {module.status}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-4 text-xs text-foreground/60">
+                          <div className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            {module.participants} learners
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3" />
+                            {module.avgScore}% avg score
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Eye className="h-3 w-3" />
+                            {module.views?.toLocaleString() || 0} views
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-4 text-xs text-foreground/60">
-                        <div className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {module.participants} learners
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <TrendingUp className="h-3 w-3" />
-                          {module.avgScore}% avg score
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Eye className="h-3 w-3" />
-                          {module.views.toLocaleString()} views
-                        </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2 flex-shrink-0">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-2"
+                          onClick={() => handleEditModule(module.id)}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                          <span className="hidden sm:inline">Edit</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteModule(module.id)}
+                          className="gap-2 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="hidden sm:inline">Delete</span>
+                        </Button>
                       </div>
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2 flex-shrink-0">
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Edit2 className="h-4 w-4" />
-                        <span className="hidden sm:inline">Edit</span>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 text-center border rounded-lg border-dashed">
+                    <AlertCircle className="h-8 w-8 text-foreground/40 mb-2" />
+                    <p className="text-foreground/60">No modules found</p>
+                    {filterStatus !== 'all' && (
+                      <Button variant="link" onClick={() => setFilterStatus('all')} className="mt-2 text-primary">
+                        Clear filter
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteModule(module.id)}
-                        className="gap-2 text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="hidden sm:inline">Delete</span>
-                      </Button>
-                    </div>
+                    )}
                   </div>
-                ))
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <AlertCircle className="h-8 w-8 text-foreground/40 mb-2" />
-                  <p className="text-foreground/60">No modules found</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Community Proposals */}
-        <Card className="mt-10">
-          <CardHeader>
-            <CardTitle>Community Proposals</CardTitle>
-            <CardDescription>Review and approve module proposals from the community</CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            <div className="space-y-3">
-              {/* Mock data removed - components will fetch from database */}
-              {/* TODO: Implement database query to fetch community proposals */}
-              {([] as any[]).map((proposal, index) => (
-                <div key={index} className="flex items-center justify-between gap-4 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors">
-                  <div>
-                    <h4 className="font-semibold text-foreground">{proposal.title}</h4>
-                    <p className="text-xs text-foreground/60 mt-1">
-                      Proposed by {proposal.author} · {proposal.votes} community votes
-                    </p>
-                  </div>
-
-                  <div className="flex gap-2 flex-shrink-0">
-                    <Button variant="outline" size="sm">
-                      Approve
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-destructive">
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

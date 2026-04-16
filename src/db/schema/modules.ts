@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm'
 import { int, mysqlTable, mysqlEnum, text, timestamp, varchar } from 'drizzle-orm/mysql-core'
 import { randomUUID } from 'crypto'
 import { users } from './users'
+import { questions } from './questions'
 
 export const modules = mysqlTable('modules', {
   id: int('id').primaryKey().autoincrement(),
@@ -48,4 +49,5 @@ export const moduleCardsRelations = relations(moduleCards, ({ one, many }) => ({
     fields: [moduleCards.moduleId],
     references: [modules.id],
   }),
+  questions: many(questions),
 }))
