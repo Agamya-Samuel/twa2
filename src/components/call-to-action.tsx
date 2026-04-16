@@ -36,13 +36,13 @@ export function CallToAction() {
           </div>
 
           {/* Trust indicators */}
-          <div className="flex flex-col gap-4 justify-center items-center text-sm opacity-80">
+          {/* <div className="flex flex-col gap-4 justify-center items-center text-sm opacity-80">
             <div className="space-y-2">
               <p>✓ No credit card required</p>
               <p>✓ Free to start, premium upgrades available</p>
               <p>✓ Certified by Wikimedia Foundation</p>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </section>

@@ -13,7 +13,7 @@ export default function Home() {
       <Header />
       <HeroSection />
       <FeaturedModules />
-      <StatsSection />
+      {/* <StatsSection /> */}
       <CallToAction />
       <Footer />
     </main>
