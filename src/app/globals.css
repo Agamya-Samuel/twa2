@@ -10,13 +10,13 @@
   --card-foreground: oklch(0.2 0.01 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2 0.01 0);
-  --primary: #990000;
+  --primary: #006699;
   --primary-foreground: oklch(0.98 0.002 70);
   --secondary: #339966;
   --secondary-foreground: oklch(1 0 0);
   --muted: oklch(0.9 0.01 0);
   --muted-foreground: oklch(0.5 0.01 0);
-  --accent: #006699;
+  --accent: #990000;
   --accent-foreground: oklch(1 0 0);
   --destructive: #990000;
   --destructive-foreground: oklch(1 0 0);
