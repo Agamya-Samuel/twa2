@@ -8,7 +8,7 @@ export const achievements = mysqlTable('achievements', {
   name: varchar('name', { length: 256 }).notNull().unique(),
   description: text('description').notNull(),
   icon: varchar('icon', { length: 100 }).notNull(),
-  requirementType: mysqlEnum('requirementType', ['modules_completed', 'perfect_quizzes', 'streak_days', 'friends_count', 'points_total']).notNull(),
+  requirementType: mysqlEnum('requirementType', ['modules_completed', 'perfect_quizzes', 'streak_days', 'friends_count', 'points_total', 'learning_paths_completed']).notNull(),
   requirementValue: int('requirementValue').notNull(),
   createdAt: timestamp('createdAt', { mode: 'date', fsp: 3 }).defaultNow().notNull(),
 })
