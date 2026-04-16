@@ -21,7 +21,9 @@ import {
   TrendingUp,
 } from 'lucide-react'
 
-const USER_DATA = {
+// Mock data removed - components will fetch from database
+// TODO: Implement database query to fetch user profile data
+const USER_DATA: any = {
   name: 'Jordan Smith',
   email: 'jordan.smith@example.com',
   joinDate: 'Joined March 2024',
@@ -32,25 +34,9 @@ const USER_DATA = {
   modulesCompleted: 12,
   currentStreak: 6,
   longestStreak: 18,
-  achievements: [
-    { id: 1, name: 'First Quest', description: 'Complete your first module', unlocked: true, icon: '🚀' },
-    { id: 2, name: 'History Master', description: 'Complete 5 history modules', unlocked: true, icon: '📚' },
-    { id: 3, name: 'On Fire', description: 'Maintain a 7-day learning streak', unlocked: true, icon: '🔥' },
-    { id: 4, name: 'Quiz Champion', description: 'Get 10 perfect quiz scores', unlocked: true, icon: '⭐' },
-    { id: 5, name: 'Social Butterfly', description: 'Add 10 friends', unlocked: false, icon: '🦋' },
-    { id: 6, name: 'Expert', description: 'Complete 50 modules', unlocked: false, icon: '👨‍🎓' },
-  ],
-  recentModules: [
-    { title: 'Ancient Egypt', completed: true, score: 95, date: '2 days ago' },
-    { title: 'Renaissance Art', completed: true, score: 88, date: '5 days ago' },
-    { title: 'Space Exploration', completed: true, score: 92, date: '1 week ago' },
-    { title: 'Climate Science', completed: false, progress: 60, date: 'In Progress' },
-  ],
-  friends: [
-    { name: 'Alex Chen', points: 15420, status: 'online' },
-    { name: 'Sarah Johnson', points: 14890, status: 'online' },
-    { name: 'Marcus Williams', points: 13650, status: 'offline' },
-  ],
+  achievements: [],
+  recentModules: [],
+  friends: [],
 }
 
 export function UserProfile() {
@@ -198,7 +184,7 @@ export function UserProfile() {
           {/* Achievements Tab */}
           <TabsContent value="achievements" className="space-y-6">
             <div className="space-y-4">
-              {USER_DATA.achievements.map((achievement) => (
+              {USER_DATA.achievements.map((achievement: any) => (
                 <Card key={achievement.id} className={`overflow-hidden ${
                   achievement.unlocked ? 'border-secondary/30' : 'opacity-50'
                 }`}>
@@ -225,7 +211,7 @@ export function UserProfile() {
 
           {/* Modules Tab */}
           <TabsContent value="modules" className="space-y-4">
-            {USER_DATA.recentModules.map((module, index) => (
+            {USER_DATA.recentModules.map((module: any, index: number) => (
               <Card key={index}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between gap-4 mb-3">
@@ -262,7 +248,7 @@ export function UserProfile() {
 
           {/* Friends Tab */}
           <TabsContent value="friends" className="space-y-4">
-            {USER_DATA.friends.map((friend, index) => (
+            {USER_DATA.friends.map((friend: any, index: number) => (
               <Card key={index}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between gap-4">

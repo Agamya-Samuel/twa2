@@ -13,24 +13,10 @@ import {
 } from '@/components/ui/select'
 import { Trophy, Medal, Flame, Target, Award, TrendingUp } from 'lucide-react'
 
-const LEADERBOARD_DATA = [
-  { rank: 1, name: 'Alex Chen', points: 15420, badges: 47, modules: 28, streak: 24, avatar: '👤' },
-  { rank: 2, name: 'Sarah Johnson', points: 14890, badges: 45, modules: 26, streak: 18, avatar: '👤' },
-  { rank: 3, name: 'Marcus Williams', points: 13650, badges: 42, modules: 24, streak: 15, avatar: '👤' },
-  { rank: 4, name: 'Emma Davis', points: 12340, badges: 38, modules: 21, streak: 12, avatar: '👤' },
-  { rank: 5, name: 'James Wilson', points: 11980, badges: 36, modules: 20, streak: 10, avatar: '👤' },
-  { rank: 6, name: 'Olivia Brown', points: 11450, badges: 34, modules: 19, streak: 8, avatar: '👤' },
-  { rank: 7, name: 'David Martinez', points: 10890, badges: 31, modules: 17, streak: 7, avatar: '👤' },
-  { rank: 8, name: 'Sophia Anderson', points: 10340, badges: 29, modules: 15, streak: 5, avatar: '👤' },
-  { rank: 9, name: 'Noah Taylor', points: 9870, badges: 27, modules: 14, streak: 4, avatar: '👤' },
-  { rank: 10, name: 'Ava Rodriguez', points: 9450, badges: 25, modules: 13, streak: 3, avatar: '👤' },
-]
-
-const FRIENDS_DATA = [
-  { rank: 1, name: 'You', points: 8920, badges: 23, modules: 12, streak: 6, isYou: true, avatar: '👤' },
-  { rank: 2, name: 'Mike Johnson', points: 7650, badges: 19, modules: 10, streak: 4, avatar: '👤' },
-  { rank: 3, name: 'Lisa Chen', points: 6540, badges: 17, modules: 8, streak: 2, avatar: '👤' },
-]
+// Mock data removed - components will fetch from database
+// TODO: Implement database query to fetch leaderboard data
+const LEADERBOARD_DATA: any[] = []
+const FRIENDS_DATA: any[] = []
 
 type LeaderboardTab = 'global' | 'friends' | 'weekly' | 'achievements'
 
