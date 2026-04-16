@@ -1,4 +1,4 @@
-import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, foreignKey, primaryKey, varchar, text, int, unique, mysqlEnum } from "drizzle-orm/mysql-core"
+import { mysqlTable, mysqlSchema, AnyMySqlColumn, foreignKey, primaryKey, varchar, text, int, unique, mysqlEnum } from "drizzle-orm/mysql-core"
 import { sql } from "drizzle-orm"
 
 export const accounts = mysqlTable("accounts", {
@@ -16,7 +16,6 @@ export const accounts = mysqlTable("accounts", {
 	sessionState: varchar("session_state", { length: 100 }),
 },
 (table) => [
-	index("accounts_provider_providerAccountId_idx").on(table.provider, table.providerAccountId),
 	primaryKey({ columns: [table.id], name: "accounts_id"}),
 ]);
 
@@ -25,7 +24,7 @@ export const achievements = mysqlTable("achievements", {
 	name: varchar({ length: 256 }).notNull(),
 	description: text().notNull(),
 	icon: varchar({ length: 100 }).notNull(),
-	requirementType: mysqlEnum(['modules_completed','perfect_quizzes','streak_days','friends_count','points_total']).notNull(),
+	requirementType: mysqlEnum(['modules_completed','perfect_quizzes','streak_days','friends_count','points_total','learning_paths_completed']).notNull(),
 	requirementValue: int().notNull(),
 	createdAt: timestamp({ fsp: 3, mode: 'string' }).default(sql`(now())`).notNull(),
 },
@@ -46,6 +45,17 @@ export const activityLogs = mysqlTable("activity_logs", {
 	primaryKey({ columns: [table.id], name: "activity_logs_id"}),
 ]);
 
+export const certificates = mysqlTable("certificates", {
+	id: int().autoincrement().notNull(),
+	title: varchar({ length: 256 }).notNull(),
+	description: text().notNull(),
+	image: text(),
+	createdAt: timestamp({ fsp: 3, mode: 'string' }).default(sql`(now())`).notNull(),
+},
+(table) => [
+	primaryKey({ columns: [table.id], name: "certificates_id"}),
+]);
+
 export const friendships = mysqlTable("friendships", {
 	id: int().autoincrement().notNull(),
 	requesterId: varchar({ length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" } ),
@@ -55,6 +65,36 @@ export const friendships = mysqlTable("friendships", {
 },
 (table) => [
 	primaryKey({ columns: [table.id], name: "friendships_id"}),
+]);
+
+export const learningPathModules = mysqlTable("learning_path_modules", {
+	id: int().autoincrement().notNull(),
+	learningPathId: int().notNull().references(() => learningPaths.id, { onDelete: "cascade" } ),
+	moduleId: int().notNull().references(() => modules.id, { onDelete: "cascade" } ),
+	sortOrder: int().default(0).notNull(),
+	createdAt: timestamp({ fsp: 3, mode: 'string' }).default(sql`(now())`).notNull(),
+},
+(table) => [
+	primaryKey({ columns: [table.id], name: "learning_path_modules_id"}),
+]);
+
+export const learningPaths = mysqlTable("learning_paths", {
+	id: int().autoincrement().notNull(),
+	title: varchar({ length: 256 }).notNull(),
+	description: text().notNull(),
+	coverImage: text(),
+	difficulty: mysqlEnum(['Beginner','Intermediate','Advanced']).notNull(),
+	estimatedTime: varchar({ length: 50 }),
+	prerequisites: text(),
+	isSequential: tinyint().default(0).notNull(),
+	status: mysqlEnum(['published','draft','pending']).default('draft').notNull(),
+	authorId: varchar({ length: 36 }).notNull().references(() => users.id),
+	certificateId: int(),
+	createdAt: timestamp({ fsp: 3, mode: 'string' }).default(sql`(now())`).notNull(),
+	updatedAt: timestamp({ fsp: 3, mode: 'string' }).default(sql`(now())`).notNull(),
+},
+(table) => [
+	primaryKey({ columns: [table.id], name: "learning_paths_id"}),
 ]);
 
 export const moduleCards = mysqlTable("module_cards", {
@@ -144,14 +184,12 @@ export const questions = mysqlTable("questions", {
 ]);
 
 export const sessions = mysqlTable("sessions", {
-	id: varchar({ length: 36 }).notNull(),
 	sessionToken: varchar({ length: 255 }).notNull(),
 	userId: varchar({ length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" } ),
 	expires: timestamp({ fsp: 3, mode: 'string' }).notNull(),
 },
 (table) => [
-	index("sessions_sessionToken_idx").on(table.sessionToken),
-	primaryKey({ columns: [table.id], name: "sessions_id"}),
+	primaryKey({ columns: [table.sessionToken], name: "sessions_sessionToken"}),
 ]);
 
 export const userAchievements = mysqlTable("user_achievements", {
@@ -176,6 +214,45 @@ export const userAnswers = mysqlTable("user_answers", {
 	primaryKey({ columns: [table.id], name: "user_answers_id"}),
 ]);
 
+export const userCertificates = mysqlTable("user_certificates", {
+	id: int().autoincrement().notNull(),
+	userId: varchar({ length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" } ),
+	certificateId: int().notNull().references(() => certificates.id, { onDelete: "cascade" } ),
+	awardedAt: timestamp({ fsp: 3, mode: 'string' }).default(sql`(now())`).notNull(),
+},
+(table) => [
+	primaryKey({ columns: [table.id], name: "user_certificates_id"}),
+]);
+
+export const userLearningPathModuleProgress = mysqlTable("user_learning_path_module_progress", {
+	id: int().autoincrement().notNull(),
+	userId: varchar({ length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" } ),
+	learningPathId: int().notNull(),
+	moduleId: int().notNull(),
+	status: mysqlEnum(['not_started','in_progress','completed']).default('not_started').notNull(),
+	currentCardIndex: int().default(0).notNull(),
+	score: int(),
+	completedAt: timestamp({ fsp: 3, mode: 'string' }),
+	createdAt: timestamp({ fsp: 3, mode: 'string' }).default(sql`(now())`).notNull(),
+	updatedAt: timestamp({ fsp: 3, mode: 'string' }).default(sql`(now())`).notNull(),
+},
+(table) => [
+	primaryKey({ columns: [table.id], name: "user_learning_path_module_progress_id"}),
+]);
+
+export const userLearningPathProgress = mysqlTable("user_learning_path_progress", {
+	id: int().autoincrement().notNull(),
+	userId: varchar({ length: 36 }).notNull(),
+	learningPathId: int().notNull(),
+	status: mysqlEnum(['not_started','in_progress','completed']).default('not_started').notNull(),
+	completedAt: timestamp({ fsp: 3, mode: 'string' }),
+	createdAt: timestamp({ fsp: 3, mode: 'string' }).default(sql`(now())`).notNull(),
+	updatedAt: timestamp({ fsp: 3, mode: 'string' }).default(sql`(now())`).notNull(),
+},
+(table) => [
+	primaryKey({ columns: [table.id], name: "user_learning_path_progress_id"}),
+]);
+
 export const userModuleProgress = mysqlTable("user_module_progress", {
 	id: int().autoincrement().notNull(),
 	userId: varchar({ length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" } ),
@@ -198,6 +275,7 @@ export const users = mysqlTable("users", {
 	password: varchar({ length: 255 }),
 	image: varchar({ length: 500 }),
 	bio: text(),
+	role: mysqlEnum(['user','admin']).default('user').notNull(),
 	totalPoints: int().default(0).notNull(),
 	rank: int(),
 	currentStreak: int().default(0).notNull(),
@@ -205,10 +283,8 @@ export const users = mysqlTable("users", {
 	emailVerified: timestamp({ fsp: 3, mode: 'string' }),
 	createdAt: timestamp({ fsp: 3, mode: 'string' }).default(sql`(now())`).notNull(),
 	updatedAt: timestamp({ fsp: 3, mode: 'string' }).default(sql`(now())`).notNull(),
-	role: mysqlEnum(['user','admin']).default('user').notNull(),
 },
 (table) => [
-	index("users_email_idx").on(table.email),
 	primaryKey({ columns: [table.id], name: "users_id"}),
 	unique("users_email_unique").on(table.email),
 ]);

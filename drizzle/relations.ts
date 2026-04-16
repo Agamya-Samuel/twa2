@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, accounts, modules, activityLogs, friendships, moduleCards, moduleProposals, proposalVotes, questions, questionOptions, sessions, achievements, userAchievements, userAnswers, userModuleProgress } from "./schema";
+import { users, accounts, modules, activityLogs, friendships, learningPaths, learningPathModules, moduleCards, moduleProposals, proposalVotes, questions, questionOptions, sessions, achievements, userAchievements, userAnswers, certificates, userCertificates, userLearningPathModuleProgress, userModuleProgress } from "./schema";
 
 export const accountsRelations = relations(accounts, ({one}) => ({
 	user: one(users, {
@@ -17,12 +17,15 @@ export const usersRelations = relations(users, ({many}) => ({
 	friendships_requesterId: many(friendships, {
 		relationName: "friendships_requesterId_users_id"
 	}),
+	learningPaths: many(learningPaths),
 	moduleProposals: many(moduleProposals),
 	modules: many(modules),
 	proposalVotes: many(proposalVotes),
 	sessions: many(sessions),
 	userAchievements: many(userAchievements),
 	userAnswers: many(userAnswers),
+	userCertificates: many(userCertificates),
+	userLearningPathModuleProgresses: many(userLearningPathModuleProgress),
 	userModuleProgresses: many(userModuleProgress),
 }));
 
@@ -39,6 +42,7 @@ export const activityLogsRelations = relations(activityLogs, ({one}) => ({
 
 export const modulesRelations = relations(modules, ({one, many}) => ({
 	activityLogs: many(activityLogs),
+	learningPathModules: many(learningPathModules),
 	moduleCards: many(moduleCards),
 	user: one(users, {
 		fields: [modules.authorId],
@@ -57,6 +61,25 @@ export const friendshipsRelations = relations(friendships, ({one}) => ({
 		fields: [friendships.requesterId],
 		references: [users.id],
 		relationName: "friendships_requesterId_users_id"
+	}),
+}));
+
+export const learningPathModulesRelations = relations(learningPathModules, ({one}) => ({
+	learningPath: one(learningPaths, {
+		fields: [learningPathModules.learningPathId],
+		references: [learningPaths.id]
+	}),
+	module: one(modules, {
+		fields: [learningPathModules.moduleId],
+		references: [modules.id]
+	}),
+}));
+
+export const learningPathsRelations = relations(learningPaths, ({one, many}) => ({
+	learningPathModules: many(learningPathModules),
+	user: one(users, {
+		fields: [learningPaths.authorId],
+		references: [users.id]
 	}),
 }));
 
@@ -132,6 +155,28 @@ export const userAnswersRelations = relations(userAnswers, ({one}) => ({
 	}),
 	user: one(users, {
 		fields: [userAnswers.userId],
+		references: [users.id]
+	}),
+}));
+
+export const userCertificatesRelations = relations(userCertificates, ({one}) => ({
+	certificate: one(certificates, {
+		fields: [userCertificates.certificateId],
+		references: [certificates.id]
+	}),
+	user: one(users, {
+		fields: [userCertificates.userId],
+		references: [users.id]
+	}),
+}));
+
+export const certificatesRelations = relations(certificates, ({many}) => ({
+	userCertificates: many(userCertificates),
+}));
+
+export const userLearningPathModuleProgressRelations = relations(userLearningPathModuleProgress, ({one}) => ({
+	user: one(users, {
+		fields: [userLearningPathModuleProgress.userId],
 		references: [users.id]
 	}),
 }));

@@ -14,7 +14,7 @@ export const userLearningPathProgress = mysqlTable('user_learning_path_progress'
   updatedAt: timestamp('updatedAt', { mode: 'date', fsp: 3 }).defaultNow().notNull(),
 })
 
-export const userLearningPathModuleProgress = mysqlTable('user_path_module_progress', {
+export const userLearningPathModuleProgress = mysqlTable('user_learning_path_module_progress', {
   id: int('id').primaryKey().autoincrement(),
   userId: varchar('userId', { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
   learningPathId: int('learningPathId').notNull().references(() => learningPaths.id, { onDelete: 'cascade' }),
