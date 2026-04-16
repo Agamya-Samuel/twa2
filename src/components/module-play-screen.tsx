@@ -1,17 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import modulesData from '@/data/modules.json'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import {
   ChevronRight,
@@ -20,70 +11,75 @@ import {
   Award,
   Star,
   Users,
-  Lock,
   CheckCircle2,
   Clock,
+  Loader2,
 } from 'lucide-react'
+import { toast } from 'sonner'
+import Link from 'next/link'
 
-interface ModuleQuestion {
-  id: number
-  question: string
-  type: 'multiple-choice' | 'true-false' | 'text'
-  options?: string[]
-  correctAnswer: string | number
-  explanation: string
-  hint: string
+interface ModulePlayScreenProps {
+  moduleId: string
+  pathId?: string
 }
 
-interface ModuleCard {
-  id: number
-  type: 'content' | 'question' | 'achievement' | 'practical'
-  title: string
-  content: string
-  icon?: string
-  image?: string
-  questions?: ModuleQuestion[]
-}
-
-// Mock data removed - components will fetch from database
-// TODO: Implement database query to fetch module data by ID
-const MOCK_MODULE: any = {
-  id: '1',
-  title: 'Ancient Egypt',
-  description: 'Discover the mysteries of pharaohs, pyramids, and hieroglyphics',
-  totalCards: 8,
-  userProgress: 3,
-  difficulty: 'Beginner',
-  estimatedTime: '15 mins',
-  participants: 2543,
-  rating: 4.8,
-  badges: 5,
-  cards: [],
-}
-
-export function ModulePlayScreen({ moduleId }: { moduleId: string }) {
+export function ModulePlayScreen({ moduleId, pathId }: ModulePlayScreenProps) {
+  const [loading, setLoading] = useState(true)
+  const [module, setModule] = useState<any>(null)
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
-  const [answeredQuestions, setAnsweredQuestions] = useState<{ [key: number]: number | string }>({})
-  const [showHint, setShowHint] = useState(false)
-  const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number | string }>({})
+  const [answeredQuestions, setAnsweredQuestions] = useState<{ [key: number]: boolean }>({})
+  const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: string }>({})
   const [showExplanation, setShowExplanation] = useState(false)
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [showHint, setShowHint] = useState(false)
+  const [isFinishing, setIsFinishing] = useState(false)
 
-  // @ts-ignore
-  const foundModule = modulesData.modules.find((m) => m.id.toString() === moduleId?.toString())
-  const module = foundModule ? { ...foundModule, totalCards: foundModule.cards?.length || 1 } : MOCK_MODULE
-  
-  const currentCard = module.cards?.[currentCardIndex]
-  const progressPercentage = ((currentCardIndex + 1) / module.totalCards) * 100
+  useEffect(() => {
+    async function fetchModule() {
+      try {
+        const res = await fetch(`/api/modules/${moduleId}`)
+        if (!res.ok) throw new Error('Failed to fetch module')
+        const data = await res.json()
+        setModule(data)
+      } catch (error) {
+        console.error(error)
+        toast.error('Failed to load module')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchModule()
+  }, [moduleId])
 
-  if (!currentCard) return <div className="p-8 text-center">No cards.</div>
+  const currentCard = module?.cards?.[currentCardIndex]
+  const totalCards = module?.cards?.length || 0
+  const progressPercentage = totalCards > 0 ? ((currentCardIndex + 1) / totalCards) * 100 : 0
+
+  const saveProgress = async (status: 'in_progress' | 'completed') => {
+    try {
+      await fetch('/api/progress/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          moduleId,
+          pathId,
+          status,
+          currentCardIndex,
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to save progress:', error)
+    }
+  }
 
   const handleNextCard = () => {
-    if (currentCardIndex < module.cards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1)
+    if (currentCardIndex < totalCards - 1) {
+      const nextIndex = currentCardIndex + 1
+      setCurrentCardIndex(nextIndex)
       setShowHint(false)
       setShowExplanation(false)
-      setCurrentQuestionIndex(0)
+      saveProgress('in_progress')
+    } else {
+      handleFinish()
     }
   }
 
@@ -95,19 +91,40 @@ export function ModulePlayScreen({ moduleId }: { moduleId: string }) {
     }
   }
 
-  const handleAnswerQuestion = (questionId: number, answer: number | string) => {
+  const handleAnswerQuestion = (questionId: number, answer: string) => {
     setSelectedAnswers({ ...selectedAnswers, [questionId]: answer })
   }
 
-  const handleSubmitAnswer = (question: ModuleQuestion) => {
-    if (selectedAnswers[question.id] === question.correctAnswer) {
-      setAnsweredQuestions({ ...answeredQuestions, [question.id]: 1 })
+  const handleSubmitAnswer = (question: any) => {
+    const isCorrect = selectedAnswers[question.id] === question.correctAnswer
+    if (isCorrect) {
+      setAnsweredQuestions({ ...answeredQuestions, [question.id]: true })
     }
     setShowExplanation(true)
   }
 
-  const isAnswerCorrect = (question: ModuleQuestion) => {
-    return answeredQuestions[question.id] === 1
+  const handleFinish = async () => {
+    setIsFinishing(true)
+    await saveProgress('completed')
+    toast.success('Module completed!')
+    // Redirect logic: back to path or dashboard
+    if (pathId) {
+      window.location.href = `/paths/${pathId}`
+    } else {
+      window.location.href = '/dashboard'
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!module || !currentCard) {
+    return <div className="p-8 text-center text-foreground/60">Module content not found.</div>
   }
 
   return (
@@ -118,244 +135,173 @@ export function ModulePlayScreen({ moduleId }: { moduleId: string }) {
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <h1 className="text-3xl font-bold text-foreground">{module.title}</h1>
-              <p className="text-foreground/60">Card {currentCardIndex + 1} of {module.totalCards}</p>
+              <p className="text-foreground/60">Card {currentCardIndex + 1} of {totalCards}</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 text-sm font-medium">
               <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
                 <Clock className="h-4 w-4 text-secondary" />
-                <span className="text-sm font-medium">{module.estimatedTime}</span>
+                <span>{module.estimatedTime || '15 mins'}</span>
               </div>
             </div>
           </div>
 
-          {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-xs text-foreground/60">
-              <span>Progress</span>
+              <span>Overall Progress</span>
               <span>{Math.round(progressPercentage)}%</span>
             </div>
             <Progress value={progressPercentage} className="h-2" />
           </div>
-
-          {/* Module Stats */}
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-xs text-foreground/60">Difficulty</p>
-              <p className="text-sm font-semibold">{module.difficulty}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4 text-secondary" />
-                <p className="text-xs text-foreground/60">Learners</p>
-              </div>
-              <p className="text-sm font-semibold">{module.participants}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 text-primary" />
-                <p className="text-xs text-foreground/60">Rating</p>
-              </div>
-              <p className="text-sm font-semibold">{module.rating}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <div className="flex items-center gap-1">
-                <Award className="h-4 w-4 text-secondary" />
-                <p className="text-xs text-foreground/60">Badges</p>
-              </div>
-              <p className="text-sm font-semibold">{module.badges}</p>
-            </div>
-          </div>
         </div>
 
         {/* Main Content Card */}
-        <Card className="mb-8 overflow-hidden border-2 border-primary/20">
+        <Card className="mb-8 overflow-hidden border-2 border-primary/20 shadow-xl">
           <CardHeader className="bg-primary/5 pb-4">
-            <CardTitle className="flex items-center gap-2">
-              {currentCard.type === 'content' && '📖'}
-              {currentCard.type === 'question' && '❓'}
-              {currentCard.type === 'achievement' && '🏆'}
-              {currentCard.type === 'practical' && '📝'}
+            <CardTitle className="flex items-center gap-3">
+              <span className="text-2xl">
+                {currentCard.type === 'content' && '📖'}
+                {currentCard.type === 'question' && '❓'}
+                {currentCard.type === 'achievement' && '🏆'}
+                {currentCard.type === 'practical' && '📝'}
+              </span>
               {currentCard.title}
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="pt-6 space-y-6">
-            {/* Content Card */}
+          <CardContent className="pt-8 space-y-6">
+            {/* Content Style Rendering */}
             {currentCard.type === 'content' && (
-              <div className="space-y-4">
-                {currentCard.icon && (
-                  <div className="text-6xl">{currentCard.icon}</div>
-                )}
-                <p className="text-lg leading-relaxed text-foreground/80">
-                  {currentCard.content}
-                </p>
-              </div>
-            )}
-
-            {/* Question Card */}
-            {currentCard.type === 'question' && currentCard.questions && (
-              <div className="space-y-6">
-                {currentCard.questions.map((question: ModuleQuestion, index: number) => (
-                  <div key={question.id} className="space-y-4 border-b border-border pb-6 last:border-0">
-                    <div className="flex items-start justify-between gap-4">
-                      <h3 className="text-lg font-semibold text-foreground">
-                        Question {index + 1}: {question.question}
-                      </h3>
-                      {isAnswerCorrect(question) && (
-                        <CheckCircle2 className="h-6 w-6 text-secondary flex-shrink-0" />
-                      )}
-                    </div>
-
-                    {/* Multiple Choice Options */}
-                    {question.type === 'multiple-choice' && (
-                      <div className="space-y-2">
-                        {question.options?.map((option: string, optionIndex: number) => (
-                          <button
-                            key={optionIndex}
-                            onClick={() => handleAnswerQuestion(question.id, optionIndex)}
-                            disabled={answeredQuestions[question.id] === 1}
-                            className={`w-full rounded-lg border-2 p-4 text-left transition-all ${
-                              selectedAnswers[question.id] === optionIndex
-                                ? 'border-primary bg-primary/10'
-                                : 'border-border hover:border-primary/50'
-                            } ${
-                              answeredQuestions[question.id] === 1
-                                ? 'opacity-60 cursor-not-allowed'
-                                : ''
-                            }`}
-                          >
-                            <p className="font-medium">{option}</p>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* True/False Options */}
-                    {question.type === 'true-false' && (
-                      <div className="grid gap-2 grid-cols-2">
-                        {['True', 'False'].map((option, optionIndex) => (
-                          <button
-                            key={optionIndex}
-                            onClick={() => handleAnswerQuestion(question.id, optionIndex)}
-                            disabled={answeredQuestions[question.id] === 1}
-                            className={`rounded-lg border-2 p-4 font-semibold transition-all ${
-                              selectedAnswers[question.id] === optionIndex
-                                ? 'border-primary bg-primary/10 text-foreground'
-                                : 'border-border hover:border-primary/50'
-                            } ${
-                              answeredQuestions[question.id] === 1
-                                ? 'opacity-60 cursor-not-allowed'
-                                : ''
-                            }`}
-                          >
-                            {option}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Hint Button */}
-                    {!answeredQuestions[question.id] && !showHint && (
-                      <button
-                        onClick={() => setShowHint(true)}
-                        className="flex items-center gap-2 text-sm text-secondary hover:text-secondary/80 transition-colors"
-                      >
-                        <HelpCircle className="h-4 w-4" />
-                        Need a hint?
-                      </button>
-                    )}
-
-                    {/* Hint Display */}
-                    {showHint && !answeredQuestions[question.id] && (
-                      <div className="rounded-lg border border-secondary/30 bg-secondary/10 p-4">
-                        <p className="text-sm font-medium text-secondary">💡 Hint: {question.hint}</p>
-                      </div>
-                    )}
-
-                    {/* Submit Button */}
-                    {!answeredQuestions[question.id] && selectedAnswers[question.id] !== undefined && (
-                      <Button
-                        onClick={() => handleSubmitAnswer(question)}
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                      >
-                        Check Answer
-                      </Button>
-                    )}
-
-                    {/* Explanation */}
-                    {answeredQuestions[question.id] !== undefined && (
-                      <div className={`rounded-lg p-4 ${
-                        isAnswerCorrect(question)
-                          ? 'border border-secondary/30 bg-secondary/10'
-                          : 'border border-primary/30 bg-primary/10'
-                      }`}>
-                        <p className="text-sm font-medium mb-2">
-                          {isAnswerCorrect(question) ? '✓ Correct!' : '✗ Incorrect'}
-                        </p>
-                        <p className="text-sm text-foreground/80">{question.explanation}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Practical Card */}
-            {currentCard.type === 'practical' && (
-              <div className="space-y-6">
-                {currentCard.icon && (
-                  <div className="text-6xl text-center mb-4">{currentCard.icon}</div>
-                )}
-                <p className="text-lg leading-relaxed text-foreground/80 mb-6 font-medium">
-                  {currentCard.content}
-                </p>
-                <div className="rounded-lg border-2 border-primary/50 bg-primary/5 p-8 text-center flex flex-col items-center">
-                  <h4 className="text-xl font-bold mb-2">Practical Exercise</h4>
-                  <p className="text-sm text-foreground/70 mb-6">Complete this hands-on exercise to practice what you learned.</p>
-                  <Button size="lg" className="bg-primary text-primary-foreground px-8 font-bold">Start Exercise</Button>
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                {currentCard.icon && <div className="text-6xl mb-6">{currentCard.icon}</div>}
+                <div className="prose prose-slate dark:prose-invert max-w-none">
+                  <p className="text-xl leading-relaxed text-foreground/90 whitespace-pre-wrap">
+                    {currentCard.content}
+                  </p>
                 </div>
               </div>
             )}
 
-            {/* Achievement Card */}
+            {/* Question Style Rendering */}
+            {currentCard.type === 'question' && currentCard.questions?.map((q: any) => (
+              <div key={q.id} className="space-y-6">
+                <h3 className="text-xl font-bold text-foreground leading-tight">
+                  {q.question}
+                </h3>
+
+                <div className="grid gap-3">
+                  {q.options?.map((opt: any) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => handleAnswerQuestion(q.id, opt.optionText)}
+                      disabled={answeredQuestions[q.id]}
+                      className={`w-full rounded-xl border-2 p-5 text-left transition-all ${
+                        selectedAnswers[q.id] === opt.optionText
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                          : 'border-border hover:border-primary/40 bg-card'
+                      } ${answeredQuestions[q.id] ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-lg">{opt.optionText}</span>
+                        {answeredQuestions[q.id] && q.correctAnswer === opt.optionText && (
+                          <CheckCircle2 className="h-6 w-6 text-secondary" />
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {!answeredQuestions[q.id] && (
+                  <div className="flex flex-col gap-4">
+                    <Button
+                      onClick={() => handleSubmitAnswer(q)}
+                      disabled={!selectedAnswers[q.id]}
+                      className="w-full py-6 text-lg font-bold shadow-lg"
+                    >
+                      Check My Answer
+                    </Button>
+                    {!showHint && q.hint && (
+                      <button 
+                        onClick={() => setShowHint(true)}
+                        className="text-sm text-secondary hover:underline flex justify-center items-center gap-1"
+                      >
+                         <HelpCircle className="h-4 w-4" /> Need a hint?
+                      </button>
+                    )}
+                    {showHint && (
+                      <div className="rounded-lg bg-secondary/10 border border-secondary/20 p-4 text-secondary text-sm">
+                        💡 <strong>Hint:</strong> {q.hint}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {showExplanation && (
+                  <div className={`rounded-xl p-6 border-2 ${
+                    answeredQuestions[q.id] 
+                      ? 'border-secondary/30 bg-secondary/5' 
+                      : 'border-destructive/30 bg-destructive/5'
+                  }`}>
+                    <p className="font-bold mb-2 flex items-center gap-2">
+                       {answeredQuestions[q.id] ? '✨ Correct!' : '❌ Let\'s try that again'}
+                    </p>
+                    <p className="text-foreground/80">{q.explanation}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Achievement Style Rendering */}
             {currentCard.type === 'achievement' && (
-              <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
-                <div className="text-8xl">{currentCard.icon}</div>
-                <h3 className="text-2xl font-bold text-foreground">{currentCard.title}</h3>
-                <p className="text-lg text-foreground/70">{currentCard.content}</p>
-                <Button className="mt-4 bg-secondary text-secondary-foreground hover:bg-secondary/90">
-                  Keep Learning
-                </Button>
+              <div className="flex flex-col items-center justify-center py-12 text-center space-y-6 animate-in zoom-in duration-700">
+                <div className="relative">
+                  <div className="absolute inset-0 animate-ping rounded-full bg-secondary/20" />
+                  <div className="text-9xl relative z-10">{currentCard.icon || '🏆'}</div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-3xl font-extrabold text-foreground">{currentCard.title}</h3>
+                  <p className="text-xl text-foreground/70 max-w-md mx-auto">{currentCard.content}</p>
+                </div>
+                <div className="flex items-center gap-2 text-secondary font-bold">
+                  <Award className="h-6 w-6" />
+                  <span>Achievement Unlocked!</span>
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Navigation */}
-        <div className="flex items-center justify-between gap-4">
+        {/* Navigation Controls */}
+        <div className="flex items-center justify-between gap-6">
           <Button
             onClick={handlePreviousCard}
             disabled={currentCardIndex === 0}
-            variant="outline"
+            variant="ghost"
             size="lg"
-            className="gap-2"
+            className="px-6"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="mr-2 h-5 w-5" />
             Previous
           </Button>
 
-          <div className="text-sm text-foreground/60 text-center">
-            {currentCardIndex + 1} / {module.totalCards}
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalCards }).map((_, i) => (
+              <div 
+                key={i} 
+                className={`h-1.5 w-6 rounded-full transition-all ${
+                  i === currentCardIndex ? 'bg-primary w-10' : 'bg-muted'
+                }`} 
+              />
+            ))}
           </div>
 
           <Button
             onClick={handleNextCard}
-            disabled={currentCardIndex === module.cards.length - 1}
-            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={currentCard.type === 'question' && !answeredQuestions[currentCard.questions?.[0]?.id] && !showExplanation}
+            className="px-8 bg-primary text-primary-foreground hover:bg-primary/90 font-bold shadow-lg py-6 min-w-[140px]"
             size="lg"
           >
-            Next
-            <ChevronRight className="h-5 w-5" />
+            {currentCardIndex === totalCards - 1 ? 'Finish Module' : 'Continue'}
+            {isFinishing ? <Loader2 className="ml-2 h-5 w-5 animate-spin" /> : <ChevronRight className="ml-2 h-5 w-5" />}
           </Button>
         </div>
       </div>

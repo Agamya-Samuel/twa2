@@ -1,354 +1,252 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import {
   Trophy,
   Award,
-  Target,
-  Flame,
   BookOpen,
-  Settings,
-  Share2,
   Mail,
   Edit2,
+  Share2,
   CheckCircle2,
-  Star,
+  Flame,
   TrendingUp,
+  Loader2,
+  ChevronRight,
+  ShieldCheck,
 } from 'lucide-react'
-
 import { useSession } from 'next-auth/react'
-import { useEffect } from 'react'
 
 export function UserProfile() {
   const { data: session } = useSession()
-  const user = session?.user as any
-
-  const USER_DATA: any = {
-    name: user?.name || 'Loading profile...',
-    email: user?.email || '',
-    image: user?.image || '',
-    role: user?.role || 'user',
-    joinDate: '',
-    bio: user?.editCount ? `Wikipedia active editor with ${user.editCount} edits.` : '',
-    totalPoints: 0,
-    rank: 'Unranked',
-    totalBadges: 0,
-    modulesCompleted: 0,
-    currentStreak: 0,
-    longestStreak: 0,
-    achievements: [],
-    recentModules: [],
-    friends: [],
-  }
-
+  const [profileData, setProfileData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
-  const [editName, setEditName] = useState(USER_DATA.name)
 
   useEffect(() => {
-    if (user?.name) setEditName(user.name)
-  }, [user?.name])
+    async function fetchProfile() {
+      try {
+        const res = await fetch('/api/user/profile')
+        if (res.ok) {
+          const data = await res.json()
+          setProfileData(data)
+        }
+      } catch (err) {
+        console.error('Failed to fetch profile', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProfile()
+  }, [])
+
+  // HELPER: Merge duplicate achievements (e.g. from modules vs paths)
+  const getMergedAchievements = (rawAchievements: any[]) => {
+    const mergedMap = new Map()
+    rawAchievements?.forEach((ua: any) => {
+      const ach = ua.achievement
+      if (!ach) return
+      
+      if (mergedMap.has(ach.name)) {
+        const existing = mergedMap.get(ach.name)
+        // Only append if description is different
+        if (!existing.description.includes(ach.description)) {
+           existing.description = `${existing.description}, ${ach.description}`
+        }
+      } else {
+        mergedMap.set(ach.name, { ...ach, unlocked: true })
+      }
+    })
+    return Array.from(mergedMap.values())
+  }
+
+  const mergedAchievements = getMergedAchievements(profileData?.achievements || [])
+  const userData = profileData?.user
+  const stats = profileData?.stats
+  const certificates = profileData?.certificates || []
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  const displayName = userData?.name || session?.user?.name || 'Explorer'
 
   return (
     <section className="w-full bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         {/* Profile Header */}
-        <div className="mb-10 rounded-2xl border border-border bg-card p-6 sm:p-8">
+        <div className="mb-10 rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-            {/* User Info */}
             <div className="space-y-4 flex-1">
-              <div className="flex items-center gap-4">
-                {USER_DATA.image ? (
-                  <img src={USER_DATA.image} alt={USER_DATA.name} className="h-20 w-20 rounded-full object-cover border-4 border-background shadow-sm" />
-                ) : (
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-4xl font-bold text-primary-foreground">
-                    {USER_DATA.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="mb-2 rounded border border-border bg-background px-2 py-1 text-xl font-bold text-foreground"
-                    />
+              <div className="flex items-center gap-6">
+                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-4xl font-bold text-primary-foreground shadow-inner">
+                  {userData?.image ? (
+                    <img src={userData.image} className="h-full w-full rounded-full object-cover" alt="" />
                   ) : (
-                    <div className="flex flex-wrap items-center gap-3 mb-1">
-                      <h1 className="text-2xl font-bold text-foreground sm:text-3xl tracking-tight">{USER_DATA.name}</h1>
-                      {user && (
-                        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary uppercase tracking-widest border border-primary/20">
-                          {USER_DATA.role}
-                        </span>
-                      )}
-                    </div>
+                    displayName.charAt(0).toUpperCase()
                   )}
-                  <p className="flex items-center gap-2 text-sm text-foreground/60">
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-3 mb-1">
+                    <h1 className="text-3xl font-bold text-foreground tracking-tight">{displayName}</h1>
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary uppercase tracking-widest border border-primary/20">
+                      {userData?.role || 'User'}
+                    </span>
+                  </div>
+                  <p className="flex items-center gap-2 text-foreground/60">
                     <Mail className="h-4 w-4" />
-                    {USER_DATA.email}
+                    {userData?.email || session?.user?.email}
                   </p>
-                  <p className="text-xs text-foreground/50 mt-1">{USER_DATA.joinDate}</p>
+                  <p className="text-xs text-foreground/40 mt-1">
+                    Member since {new Date(userData?.createdAt || Date.now()).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
-
-              {isEditing ? (
-                <textarea
-                  value={USER_DATA.bio}
-                  className="w-full rounded border border-border bg-background p-2 text-sm text-foreground"
-                  rows={2}
-                />
-              ) : (
-                <p className="text-sm text-foreground/70">{USER_DATA.bio}</p>
-              )}
+              <p className="text-foreground/70 max-w-2xl leading-relaxed">
+                {userData?.bio || 'Wikipedia active editor committed to open knowledge and educational excellence.'}
+              </p>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-2">
-              {isEditing ? (
-                <>
-                  <Button
-                    onClick={() => setIsEditing(false)}
-                    className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                  >
-                    Save
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setIsEditing(false)
-                      setEditName(USER_DATA.name)
-                    }}
-                    variant="outline"
-                  >
-                    Cancel
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    onClick={() => setIsEditing(true)}
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                    Edit Profile
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Share2 className="h-4 w-4" />
-                    Share
-                  </Button>
-                </>
-              )}
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsEditing(!isEditing)}>
+                <Edit2 className="h-4 w-4" /> Edit Profile
+              </Button>
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="mt-8 grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
-            <div className="rounded-lg border border-border bg-background p-4">
+          {/* Stats Bar */}
+          <div className="mt-8 grid gap-4 grid-cols-2 sm:grid-cols-4 md:grid-cols-5">
+            <div className="rounded-xl border border-border bg-background/50 p-4 transition-all hover:border-primary/30">
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="h-4 w-4 text-primary" />
-                <p className="text-xs font-medium text-foreground/60">Points</p>
+                <span className="text-xs font-semibold text-foreground/60 uppercase">Points</span>
               </div>
-              <p className="text-2xl font-bold text-primary">{(USER_DATA.totalPoints / 1000).toFixed(1)}K</p>
-              <p className="text-xs text-foreground/50 mt-1">Rank #{USER_DATA.rank}</p>
+              <p className="text-2xl font-black text-primary">{(userData?.points || 0).toLocaleString()}</p>
             </div>
 
-            <div className="rounded-lg border border-border bg-background p-4">
+            <div className="rounded-xl border border-border bg-background/50 p-4 transition-all hover:border-secondary/30">
               <div className="flex items-center gap-2 mb-2">
                 <Award className="h-4 w-4 text-secondary" />
-                <p className="text-xs font-medium text-foreground/60">Badges</p>
+                <span className="text-xs font-semibold text-foreground/60 uppercase">Achievements</span>
               </div>
-              <p className="text-2xl font-bold text-secondary">{USER_DATA.totalBadges}</p>
+              <p className="text-2xl font-black text-secondary">{mergedAchievements.length}</p>
             </div>
 
-            <div className="rounded-lg border border-border bg-background p-4">
+            <div className="rounded-xl border border-border bg-background/50 p-4 transition-all hover:border-accent/30">
               <div className="flex items-center gap-2 mb-2">
                 <BookOpen className="h-4 w-4 text-accent" />
-                <p className="text-xs font-medium text-foreground/60">Modules</p>
+                <span className="text-xs font-semibold text-foreground/60 uppercase">Modules</span>
               </div>
-              <p className="text-2xl font-bold text-accent">{USER_DATA.modulesCompleted}</p>
+              <p className="text-2xl font-black text-accent">{stats?.modulesCompleted || 0}</p>
             </div>
 
-            <div className="rounded-lg border border-border bg-background p-4">
+            <div className="rounded-xl border border-border bg-background/50 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Flame className="h-4 w-4 text-orange-500" />
-                <p className="text-xs font-medium text-foreground/60">Streak</p>
+                <span className="text-xs font-semibold text-foreground/60 uppercase">Streak</span>
               </div>
-              <p className="text-2xl font-bold text-orange-500">{USER_DATA.currentStreak}</p>
-              <p className="text-xs text-foreground/50 mt-1">days</p>
+              <p className="text-2xl font-black text-orange-500">{userData?.currentStreak || 0}</p>
+              <p className="text-[10px] text-foreground/40 font-bold uppercase">Days</p>
             </div>
 
-            <div className="rounded-lg border border-border bg-background p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-green-500" />
-                <p className="text-xs font-medium text-foreground/60">Best</p>
+            <div className="rounded-xl border border-border bg-background/50 p-4">
+              <div className="flex items-center gap-2 mb-2 text-green-500">
+                <TrendingUp className="h-4 w-4" />
+                <span className="text-xs font-semibold text-foreground/60 uppercase">Best</span>
               </div>
-              <p className="text-2xl font-bold text-green-500">{USER_DATA.longestStreak}</p>
-              <p className="text-xs text-foreground/50 mt-1">days</p>
+              <p className="text-2xl font-black text-green-500">{userData?.longestStreak || 0}</p>
+              <p className="text-[10px] text-foreground/40 font-bold uppercase">Days</p>
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <Tabs defaultValue="achievements" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="achievements">Achievements</TabsTrigger>
-            <TabsTrigger value="modules">Modules</TabsTrigger>
-            <TabsTrigger value="friends">Friends</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+        {/* Action Tabs */}
+        <Tabs defaultValue="achievements" className="w-full space-y-8">
+          <TabsList className="bg-muted/50 p-1 rounded-xl w-full max-w-md mx-auto grid grid-cols-3">
+            <TabsTrigger value="achievements" className="rounded-lg py-2.5">Achievements</TabsTrigger>
+            <TabsTrigger value="certificates" className="rounded-lg py-2.5">Certificates</TabsTrigger>
+            <TabsTrigger value="activity" className="rounded-lg py-2.5">Activity</TabsTrigger>
           </TabsList>
 
-          {/* Achievements Tab */}
-          <TabsContent value="achievements" className="space-y-6">
-            <div className="space-y-4">
-              {USER_DATA.achievements.map((achievement: any) => (
-                <Card key={achievement.id} className={`overflow-hidden ${
-                  achievement.unlocked ? 'border-secondary/30' : 'opacity-50'
-                }`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-secondary/10 text-3xl flex-shrink-0">
-                        {achievement.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-foreground">{achievement.name}</p>
-                          {achievement.unlocked && (
-                            <CheckCircle2 className="h-5 w-5 text-secondary flex-shrink-0" />
-                          )}
+          <TabsContent value="achievements" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {mergedAchievements.length > 0 ? (
+                mergedAchievements.map((ach: any) => (
+                  <Card key={ach.id} className="overflow-hidden border-2 border-transparent hover:border-secondary/20 transition-all bg-card/50">
+                    <CardContent className="p-5">
+                      <div className="flex items-center gap-5">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/10 text-4xl shadow-sm border border-secondary/20">
+                          {ach.icon}
                         </div>
-                        <p className="text-sm text-foreground/60">{achievement.description}</p>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-foreground text-lg mb-1">{ach.name}</h4>
+                          <p className="text-sm text-foreground/60 leading-snug line-clamp-3 italic">
+                             "{ach.description}"
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full py-20 text-center border-2 border-dashed rounded-3xl">
+                  <Award className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+                  <p className="text-foreground/40 font-medium">No achievements yet. Start learning to earn badges!</p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
-          {/* Modules Tab */}
-          <TabsContent value="modules" className="space-y-4">
-            {USER_DATA.recentModules.map((module: any, index: number) => (
-              <Card key={index}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-4 mb-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-foreground truncate">{module.title}</p>
-                        {module.completed && (
-                          <CheckCircle2 className="h-5 w-5 text-secondary flex-shrink-0" />
-                        )}
+          <TabsContent value="certificates" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="grid gap-6 md:grid-cols-2">
+                {certificates.map((uc: any) => (
+                  <Card key={uc.id} className="group overflow-hidden border-2 border-primary/10 hover:border-primary/40 transition-all cursor-pointer bg-card/40 backdrop-blur-sm">
+                    <CardContent className="p-0 flex flex-col sm:flex-row">
+                      <div className="p-6 flex-1 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-full bg-primary/10 p-2">
+                             <ShieldCheck className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-xl">{uc.certificate.title}</h4>
+                            <p className="text-xs text-foreground/50 uppercase tracking-widest font-bold">Verified Achievement</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-foreground/70 leading-relaxed">{uc.certificate.description}</p>
+                        <div className="flex items-center gap-4 pt-2">
+                           <Button size="sm" className="font-bold bg-primary text-primary-foreground transform group-hover:scale-105 transition-transform">
+                             Download PDF
+                           </Button>
+                           <p className="text-[10px] text-foreground/40 italic">Awarded on {new Date(uc.awardedAt).toLocaleDateString()}</p>
+                        </div>
                       </div>
-                      <p className="text-xs text-foreground/60">{module.date}</p>
-                    </div>
-                    {module.completed ? (
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-lg font-bold text-primary">{module.score}%</p>
-                        <p className="text-xs text-foreground/60">Score</p>
+                      <div className="bg-primary/5 p-6 flex items-center justify-center sm:border-l border-primary/10">
+                         <div className="text-6xl opacity-40 grayscale group-hover:grayscale-0 transition-all transform group-hover:rotate-12">🎖️</div>
                       </div>
-                    ) : (
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-lg font-bold text-secondary">{module.progress}%</p>
-                        <p className="text-xs text-foreground/60">Progress</p>
-                      </div>
-                    )}
+                    </CardContent>
+                  </Card>
+                ))}
+                {certificates.length === 0 && (
+                  <div className="col-span-full py-20 text-center border-2 border-dashed rounded-3xl bg-muted/20">
+                    <p className="text-foreground/40">Complete a Learning Path to earn verified certificates.</p>
                   </div>
-
-                  {/* Progress Bar */}
-                  <div className="space-y-1">
-                    <Progress value={module.completed ? 100 : module.progress} className="h-2" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                )}
+             </div>
           </TabsContent>
 
-          {/* Friends Tab */}
-          <TabsContent value="friends" className="space-y-4">
-            {USER_DATA.friends.map((friend: any, index: number) => (
-              <Card key={index}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
-                        {friend.name.charAt(0)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-foreground truncate">{friend.name}</p>
-                        <p className="text-xs text-foreground/60">
-                          {friend.status === 'online' ? '🟢 Online' : '⚪ Offline'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="font-semibold text-foreground">{(friend.points / 1000).toFixed(1)}K</p>
-                      <p className="text-xs text-foreground/60">points</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-
-            <Button variant="outline" className="w-full">
-              + Add Friend
-            </Button>
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Preferences</CardTitle>
-                <CardDescription>Manage your learning preferences</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Difficulty Level</label>
-                  <select className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground">
-                    <option>All Levels</option>
-                    <option>Beginner</option>
-                    <option>Intermediate</option>
-                    <option>Advanced</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Preferred Categories</label>
-                  <select className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground" multiple>
-                    <option>History</option>
-                    <option>Science</option>
-                    <option>Art & Culture</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-foreground">Email Notifications</label>
-                  <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-border" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Account</CardTitle>
-                <CardDescription>Manage your account settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button variant="outline" className="w-full">
-                  Change Password
-                </Button>
-                <Button variant="outline" className="w-full">
-                  Download My Data
-                </Button>
-                <Button variant="outline" className="w-full text-destructive hover:text-destructive">
-                  Delete Account
-                </Button>
-              </CardContent>
-            </Card>
+          <TabsContent value="activity">
+             <div className="rounded-3xl border-2 border-dashed border-border py-20 text-center bg-card/20">
+               <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-10" />
+               <p className="text-foreground/40">Historical activity log arriving soon.</p>
+             </div>
           </TabsContent>
         </Tabs>
       </div>
