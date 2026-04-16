@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { BookOpen, Menu, X, LogOut, User, Settings, ChevronDown } from 'lucide-react'
 import { useState } from 'react'
+import { ThemeSwitcher } from '@/components/theme-switcher'
 import { Button } from '@/components/ui/button'
 
 export function Header() {
@@ -60,6 +61,9 @@ export function Header() {
               </Link>
             )}
           </nav>
+
+          <div className="flex items-center gap-2 md:gap-4">
+            <ThemeSwitcher />
 
           {status === 'loading' ? (
             <div className="hidden h-9 w-20 animate-pulse rounded-lg bg-muted md:block" />
@@ -147,6 +151,7 @@ export function Header() {
               <Menu className="h-6 w-6" />
             )}
           </button>
+          </div>
         </div>
 
         {isOpen && (
