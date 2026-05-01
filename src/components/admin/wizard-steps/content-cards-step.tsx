@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Label, RequiredLabel } from '@/components/ui/label'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { Plus, Trash2, GripVertical, FileText } from 'lucide-react'
 import type { ModuleFormData, ModuleCardFormData } from '@/types/module'
@@ -112,7 +112,7 @@ export function ContentCardsStep({ data, updateData, errors }: ContentCardsStepP
           return (
             <CardContent className="pt-6 space-y-4">
               <div className="grid gap-2">
-                <Label htmlFor="card-title" className={errors?.[`cards.${activeFullIndex}.title`] ? "text-destructive" : ""}>Card Title</Label>
+                <RequiredLabel htmlFor="card-title" required className={errors?.[`cards.${activeFullIndex}.title`] ? "text-destructive" : ""}>Card Title</RequiredLabel>
                 <Input 
                   id="card-title"
                   value={contentCards[activeCardIndex].title}
@@ -136,7 +136,7 @@ export function ContentCardsStep({ data, updateData, errors }: ContentCardsStepP
               </div>
 
               <div className="grid gap-2">
-                <Label className={errors?.[`cards.${activeFullIndex}.content`] ? "text-destructive" : ""}>Content</Label>
+                <RequiredLabel required className={errors?.[`cards.${activeFullIndex}.content`] ? "text-destructive" : ""}>Content</RequiredLabel>
                 <div className={errors?.[`cards.${activeFullIndex}.content`] ? "border border-destructive rounded-md overflow-hidden" : ""}>
                   <RichTextEditor 
                     value={contentCards[activeCardIndex].content}
