@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Label, RequiredLabel } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, Trash2, Award } from 'lucide-react'
 import type { ModuleFormData, ModuleCardFormData } from '@/types/module'
@@ -89,7 +89,7 @@ export function AchievementsStep({ data, updateData, errors }: AchievementsStepP
                 </div>
                 <CardContent className="p-6 space-y-4">
                   <div className="grid gap-2">
-                    <Label className={errors?.[`cards.${fullIndex}.title`] ? "text-destructive" : ""}>Badge Title</Label>
+                    <RequiredLabel required className={errors?.[`cards.${fullIndex}.title`] ? "text-destructive" : ""}>Badge Title</RequiredLabel>
                     <Input 
                       value={card.title}
                       onChange={(e) => handleUpdateAchievement(index, { title: e.target.value })}
@@ -113,7 +113,7 @@ export function AchievementsStep({ data, updateData, errors }: AchievementsStepP
                   </div>
                   
                   <div className="grid gap-2">
-                    <Label className={errors?.[`cards.${fullIndex}.icon`] ? "text-destructive" : ""}>Icon Name (lucide-react)</Label>
+                    <RequiredLabel required className={errors?.[`cards.${fullIndex}.icon`] ? "text-destructive" : ""}>Icon Name (lucide-react)</RequiredLabel>
                     <Input 
                       value={card.icon}
                       onChange={(e) => handleUpdateAchievement(index, { icon: e.target.value })}
