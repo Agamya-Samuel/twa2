@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Label, RequiredLabel } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Trash2, HelpCircle } from 'lucide-react'
@@ -136,7 +136,7 @@ export function QuizQuestionsStep({ data, updateData, errors }: QuizQuestionsSte
           return (
             <CardContent className="pt-6 space-y-6">
               <div className="grid gap-2 mb-6">
-                <Label htmlFor="quiz-title" className={errors?.[`cards.${activeFullIndex}.title`] ? "text-destructive" : ""}>Quiz Set Title</Label>
+                <RequiredLabel htmlFor="quiz-title" required className={errors?.[`cards.${activeFullIndex}.title`] ? "text-destructive" : ""}>Quiz Set Title</RequiredLabel>
                 <Input 
                   id="quiz-title"
                   value={quizCards[activeCardIndex].title}
@@ -165,7 +165,7 @@ export function QuizQuestionsStep({ data, updateData, errors }: QuizQuestionsSte
                 <div key={qIdx} className="border rounded-md p-4 space-y-4 bg-background">
                   <div className="flex justify-between items-start gap-4">
                     <div className="grid gap-2 flex-1">
-                      <Label className={errors?.[`cards.${activeFullIndex}.questions.${qIdx}.question`] ? "text-destructive" : ""}>Question {qIdx + 1}</Label>
+                      <RequiredLabel required className={errors?.[`cards.${activeFullIndex}.questions.${qIdx}.question`] ? "text-destructive" : ""}>Question {qIdx + 1}</RequiredLabel>
                       <Input 
                         value={q.question}
                         onChange={(e) => {
@@ -216,7 +216,7 @@ export function QuizQuestionsStep({ data, updateData, errors }: QuizQuestionsSte
 
                   {q.type === 'multiple-choice' && (
                     <div className="space-y-3 bg-muted/20 p-3 rounded-md">
-                      <Label className={errors?.[`cards.${activeFullIndex}.questions.${qIdx}.options`] ? "text-destructive" : ""}>Options</Label>
+                      <RequiredLabel required className={errors?.[`cards.${activeFullIndex}.questions.${qIdx}.options`] ? "text-destructive" : ""}>Options</RequiredLabel>
                       {errors?.[`cards.${activeFullIndex}.questions.${qIdx}.options`] && (
                         <p className="text-sm text-destructive">{errors[`cards.${activeFullIndex}.questions.${qIdx}.options`]}</p>
                       )}
@@ -270,7 +270,7 @@ export function QuizQuestionsStep({ data, updateData, errors }: QuizQuestionsSte
                   )}
 
                   <div className="grid gap-2">
-                    <Label className={errors?.[`cards.${activeFullIndex}.questions.${qIdx}.correctAnswer`] ? "text-destructive" : ""}>Correct Answer</Label>
+                    <RequiredLabel required className={errors?.[`cards.${activeFullIndex}.questions.${qIdx}.correctAnswer`] ? "text-destructive" : ""}>Correct Answer</RequiredLabel>
                     {q.type === 'multiple-choice' ? (
                       <Select
                         value={q.correctAnswer}
