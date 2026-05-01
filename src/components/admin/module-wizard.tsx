@@ -12,6 +12,8 @@ import { AchievementsStep } from './wizard-steps/achievements-step'
 import { ReviewStep } from './wizard-steps/review-step'
 import { Loader2 } from 'lucide-react'
 import type { ModuleFormData } from '@/types/module'
+import { basicInfoSchema, contentCardsSchema, quizQuestionsSchema, achievementsSchema } from '@/lib/validation/module-schemas'
+import { zodErrorsToRecord } from '@/lib/validation/utils'
 
 const steps: Step[] = [
   { id: 'basic', title: 'Basic Info', description: 'Title, category, etc.' },
@@ -51,88 +53,23 @@ export function ModuleWizard({ initialModule, onComplete, onCancel }: ModuleWiza
   }
 
   const validateStep = (stepIndex: number): boolean => {
-    const newErrors: Record<string, string> = {}
+    const schemas = [
+      basicInfoSchema,
+      contentCardsSchema,
+      quizQuestionsSchema,
+      achievementsSchema
+    ]
 
-    if (stepIndex === 0) {
-      if (!data.title || data.title.trim().length < 3) {
-        newErrors['title'] = 'Title must be at least 3 characters.'
-      }
-      if (!data.description || data.description.trim().length < 10) {
-        newErrors['description'] = 'Description must be at least 10 characters.'
-      }
-      if (!data.estimatedTime || !data.estimatedTime.trim()) {
-        newErrors['estimatedTime'] = 'Estimated time is required.'
-      }
-    }
+    const result = schemas[stepIndex].safeParse(data)
 
-    if (stepIndex === 1) {
-      data.cards.forEach((card, idx) => {
-        if (card.type === 'content') {
-          if (!card.title || !card.title.trim()) {
-            newErrors[`cards.${idx}.title`] = 'Title is required.'
-          }
-          if (!card.content || card.content === '<p></p>') {
-            newErrors[`cards.${idx}.content`] = `Content is required.`
-          }
-        }
-      })
-    }
-
-    if (stepIndex === 2) {
-      data.cards.forEach((card, idx) => {
-        if (card.type === 'question') {
-          if (!card.title || !card.title.trim()) {
-            newErrors[`cards.${idx}.title`] = 'Quiz set title is required.'
-          }
-          if (!card.questions || card.questions.length === 0) {
-            newErrors[`cards.${idx}.general`] = `Must have at least one question.`
-          }
-          
-          if (card.questions) {
-            card.questions.forEach((q, qIdx) => {
-              if (!q.question || !q.question.trim()) {
-                newErrors[`cards.${idx}.questions.${qIdx}.question`] = `Question text is required.`
-              }
-              if (!q.correctAnswer || !q.correctAnswer.trim()) {
-                newErrors[`cards.${idx}.questions.${qIdx}.correctAnswer`] = `Correct answer is required.`
-              }
-              if (q.type === 'multiple-choice') {
-                if (!q.options || q.options.length < 2) {
-                  newErrors[`cards.${idx}.questions.${qIdx}.options`] = `Must have at least 2 options.`
-                } else if (!q.options.some(o => o.optionText === q.correctAnswer)) {
-                   newErrors[`cards.${idx}.questions.${qIdx}.correctAnswer`] = `Correct answer must match an option.`
-                }
-
-                q.options?.forEach((opt, optIdx) => {
-                  if (!opt.optionText || !opt.optionText.trim()) {
-                    newErrors[`cards.${idx}.questions.${qIdx}.options.${optIdx}`] = `Option text cannot be empty.`
-                  }
-                })
-              }
-            })
-          }
-        }
-      })
-    }
-
-    if (stepIndex === 3) {
-      data.cards.forEach((card, idx) => {
-        if (card.type === 'achievement') {
-          if (!card.title || !card.title.trim()) {
-             newErrors[`cards.${idx}.title`] = 'Achievement title is required.'
-          }
-          if (!card.icon) {
-             newErrors[`cards.${idx}.icon`] = `Achievement icon is required.`
-          }
-        }
-      })
-    }
-
-    setErrors(newErrors)
-    if (Object.keys(newErrors).length > 0) {
+    if (!result.success) {
+      const newErrors = zodErrorsToRecord(result.error)
+      setErrors(newErrors)
       toast.error('Please fix the highlighted errors before continuing.')
       return false
     }
+
+    setErrors({})
     return true
   }
 
