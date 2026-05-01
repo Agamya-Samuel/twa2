@@ -1,7 +1,7 @@
 'use client'
 
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Label, RequiredLabel } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
@@ -20,7 +20,7 @@ export function BasicInfoStep({ data, updateData, errors }: BasicInfoStepProps) 
       <CardContent className="pt-6 space-y-6">
         <div className="space-y-4">
           <div className="grid gap-2">
-            <Label htmlFor="title" className={errors?.title ? "text-destructive" : ""}>Module Title</Label>
+            <RequiredLabel htmlFor="title" required className={errors?.title ? "text-destructive" : ""}>Module Title</RequiredLabel>
             <Input 
               id="title" 
               placeholder="e.g., Introduction to Ancient History"
@@ -32,7 +32,7 @@ export function BasicInfoStep({ data, updateData, errors }: BasicInfoStepProps) 
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="description" className={errors?.description ? "text-destructive" : ""}>Description</Label>
+            <RequiredLabel htmlFor="description" required className={errors?.description ? "text-destructive" : ""}>Description</RequiredLabel>
             <Textarea 
               id="description" 
               placeholder="Provide a brief overview of what users will learn..."
@@ -83,7 +83,7 @@ export function BasicInfoStep({ data, updateData, errors }: BasicInfoStepProps) 
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="time" className={errors?.estimatedTime ? "text-destructive" : ""}>Estimated Time</Label>
+              <RequiredLabel htmlFor="time" required className={errors?.estimatedTime ? "text-destructive" : ""}>Estimated Time</RequiredLabel>
               <Input 
                 id="time" 
                 placeholder="e.g., 30 min"
