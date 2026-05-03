@@ -57,7 +57,7 @@ export function ReviewStep({ data }: ReviewStepProps) {
 
             <h4 className="font-semibold text-lg mb-4 border-b pb-2">Module Structure</h4>
             
-            <div className="space-y-3">
+            <div className="space-y-4">
               {data.cards.map((card, idx) => (
                 <div key={idx} className="flex items-start gap-3 p-3 border rounded-md bg-card">
                   <div className="bg-muted p-2 rounded-md shrink-0">
