@@ -11,28 +11,28 @@ import { Users, BookOpen } from 'lucide-react'
 export default function AdminPage() {
   return (
     <main className="min-h-screen bg-background">
-      <Header />
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="mb-8 text-3xl font-bold">Admin Dashboard</h1>
-        <Tabs defaultValue="modules" className="w-full">
-          <TabsList>
-            <TabsTrigger value="modules" className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4" />
-              Modules
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Users
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="modules">
-            <AdminModuleEditor />
-          </TabsContent>
-          <TabsContent value="users">
-            <AdminUserManager />
-          </TabsContent>
-        </Tabs>
-      </div>
+    <Header />
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <h1 className="mb-8 text-3xl font-bold">Admin Dashboard</h1>
+      <Tabs defaultValue="modules" className="w-full">
+        <TabsList>
+          <TabsTrigger value="modules" className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            Modules
+          </TabsTrigger>
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Users
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="modules">
+          <AdminModuleEditor />
+        </TabsContent>
+        <TabsContent value="users">
+          <AdminUserManager />
+        </TabsContent>
+      </Tabs>
+    </div>
       <Footer />
     </main>
   )
