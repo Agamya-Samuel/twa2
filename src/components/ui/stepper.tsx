@@ -20,7 +20,7 @@ interface StepperProps {
 export function Stepper({ steps, currentStep, onStepClick, disabled, className }: StepperProps) {
   return (
     <div className={cn("w-full py-4", className)}>
-      <div className="flex items-center justify-between relative">
+      <div className="flex items-center justify-between gap-4 relative">
         <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-[2px] bg-muted/50 -z-10" />
         <div 
           className="absolute left-0 top-1/2 transform -translate-y-1/2 h-[2px] bg-primary transition-all duration-300 ease-in-out -z-10" 
