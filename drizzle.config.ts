@@ -14,6 +14,6 @@ export default {
   out: './drizzle',
   dialect: 'mysql',
   dbCredentials: {
-    url: url.toString()
+    url: process.env.DATABASE_URL
   },
 } satisfies Config
