@@ -15,12 +15,10 @@ CREATE TABLE `accounts` (
 );
 --> statement-breakpoint
 CREATE TABLE `sessions` (
-	`id` varchar(36) NOT NULL,
 	`sessionToken` varchar(255) NOT NULL,
 	`userId` varchar(36) NOT NULL,
 	`expires` timestamp(3) NOT NULL,
-	CONSTRAINT `sessions_id` PRIMARY KEY(`id`),
-	CONSTRAINT `sessions_sessionToken_unique` UNIQUE(`sessionToken`)
+	CONSTRAINT `sessions_sessionToken` PRIMARY KEY(`sessionToken`)
 );
 --> statement-breakpoint
 CREATE TABLE `users` (
@@ -30,6 +28,7 @@ CREATE TABLE `users` (
 	`password` varchar(255),
 	`image` varchar(500),
 	`bio` text,
+	`role` enum('user','admin') NOT NULL DEFAULT 'user',
 	`totalPoints` int NOT NULL DEFAULT 0,
 	`rank` int,
 	`currentStreak` int NOT NULL DEFAULT 0,
@@ -124,7 +123,7 @@ CREATE TABLE `achievements` (
 	`name` varchar(256) NOT NULL,
 	`description` text NOT NULL,
 	`icon` varchar(100) NOT NULL,
-	`requirementType` enum('modules_completed','perfect_quizzes','streak_days','friends_count','points_total') NOT NULL,
+	`requirementType` enum('modules_completed','perfect_quizzes','streak_days','friends_count','points_total','learning_paths_completed') NOT NULL,
 	`requirementValue` int NOT NULL,
 	`createdAt` timestamp(3) NOT NULL DEFAULT (now()),
 	CONSTRAINT `achievements_id` PRIMARY KEY(`id`),
@@ -177,6 +176,74 @@ CREATE TABLE `activity_logs` (
 	CONSTRAINT `activity_logs_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
+CREATE TABLE `certificates` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`title` varchar(256) NOT NULL,
+	`description` text NOT NULL,
+	`image` text,
+	`createdAt` timestamp(3) NOT NULL DEFAULT (now()),
+	CONSTRAINT `certificates_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `user_certificates` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` varchar(36) NOT NULL,
+	`certificateId` int NOT NULL,
+	`awardedAt` timestamp(3) NOT NULL DEFAULT (now()),
+	CONSTRAINT `user_certificates_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `learning_path_modules` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`learningPathId` int NOT NULL,
+	`moduleId` int NOT NULL,
+	`sortOrder` int NOT NULL DEFAULT 0,
+	`createdAt` timestamp(3) NOT NULL DEFAULT (now()),
+	CONSTRAINT `learning_path_modules_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `learning_paths` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`title` varchar(256) NOT NULL,
+	`description` text NOT NULL,
+	`coverImage` text,
+	`difficulty` enum('Beginner','Intermediate','Advanced') NOT NULL,
+	`estimatedTime` varchar(50),
+	`prerequisites` text,
+	`isSequential` boolean NOT NULL DEFAULT false,
+	`status` enum('published','draft','pending') NOT NULL DEFAULT 'draft',
+	`authorId` varchar(36) NOT NULL,
+	`certificateId` int,
+	`createdAt` timestamp(3) NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp(3) NOT NULL DEFAULT (now()),
+	CONSTRAINT `learning_paths_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `user_learning_path_module_progress` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` varchar(36) NOT NULL,
+	`learningPathId` int NOT NULL,
+	`moduleId` int NOT NULL,
+	`status` enum('not_started','in_progress','completed') NOT NULL DEFAULT 'not_started',
+	`currentCardIndex` int NOT NULL DEFAULT 0,
+	`score` int,
+	`completedAt` timestamp(3),
+	`createdAt` timestamp(3) NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp(3) NOT NULL DEFAULT (now()),
+	CONSTRAINT `user_learning_path_module_progress_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `user_learning_path_progress` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` varchar(36) NOT NULL,
+	`learningPathId` int NOT NULL,
+	`status` enum('not_started','in_progress','completed') NOT NULL DEFAULT 'not_started',
+	`completedAt` timestamp(3),
+	`createdAt` timestamp(3) NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp(3) NOT NULL DEFAULT (now()),
+	CONSTRAINT `user_learning_path_progress_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
 ALTER TABLE `accounts` ADD CONSTRAINT `accounts_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `sessions` ADD CONSTRAINT `sessions_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `module_cards` ADD CONSTRAINT `module_cards_moduleId_modules_id_fk` FOREIGN KEY (`moduleId`) REFERENCES `modules`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -196,6 +263,16 @@ ALTER TABLE `proposal_votes` ADD CONSTRAINT `proposal_votes_proposalId_module_pr
 ALTER TABLE `proposal_votes` ADD CONSTRAINT `proposal_votes_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `activity_logs` ADD CONSTRAINT `activity_logs_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `activity_logs` ADD CONSTRAINT `activity_logs_moduleId_modules_id_fk` FOREIGN KEY (`moduleId`) REFERENCES `modules`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `user_certificates` ADD CONSTRAINT `user_certificates_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `user_certificates` ADD CONSTRAINT `user_certificates_certificateId_certificates_id_fk` FOREIGN KEY (`certificateId`) REFERENCES `certificates`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `learning_path_modules` ADD CONSTRAINT `learning_path_modules_learningPathId_learning_paths_id_fk` FOREIGN KEY (`learningPathId`) REFERENCES `learning_paths`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `learning_path_modules` ADD CONSTRAINT `learning_path_modules_moduleId_modules_id_fk` FOREIGN KEY (`moduleId`) REFERENCES `modules`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `learning_paths` ADD CONSTRAINT `learning_paths_authorId_users_id_fk` FOREIGN KEY (`authorId`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `user_learning_path_module_progress` ADD CONSTRAINT `user_lp_mp_user_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `user_learning_path_module_progress` ADD CONSTRAINT `user_lp_mp_lp_fk` FOREIGN KEY (`learningPathId`) REFERENCES `learning_paths`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `user_learning_path_module_progress` ADD CONSTRAINT `user_lp_mp_module_fk` FOREIGN KEY (`moduleId`) REFERENCES `modules`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `user_learning_path_progress` ADD CONSTRAINT `user_lp_prog_user_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `user_learning_path_progress` ADD CONSTRAINT `user_lp_prog_lp_fk` FOREIGN KEY (`learningPathId`) REFERENCES `learning_paths`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX `accounts_provider_providerAccountId_idx` ON `accounts` (`provider`,`providerAccountId`);--> statement-breakpoint
 CREATE INDEX `sessions_sessionToken_idx` ON `sessions` (`sessionToken`);--> statement-breakpoint
 CREATE INDEX `users_email_idx` ON `users` (`email`);

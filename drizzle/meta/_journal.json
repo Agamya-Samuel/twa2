@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1776312209223,
-      "tag": "0000_marvelous_karma",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1776329120909,
-      "tag": "0001_blushing_mindworm",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1776329364324,
-      "tag": "0002_sad_logan",
+      "when": 1777796342945,
+      "tag": "0000_absent_smasher",
       "breakpoints": true
     }
   ]
