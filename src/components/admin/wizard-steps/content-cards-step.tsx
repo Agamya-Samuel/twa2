@@ -69,39 +69,43 @@ export function ContentCardsStep({ data, updateData, errors }: ContentCardsStepP
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 overflow-y-auto flex-1">
-          {contentCards.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground">
-              <FileText className="h-8 w-8 mb-2 opacity-20" />
-              <p className="text-sm">No content cards yet.</p>
-              <Button variant="link" size="sm" onClick={handleAddCard}>Create your first card</Button>
-            </div>
-          ) : (
-            <ul className="divide-y">
-              {contentCards.map((card, idx) => (
-                <li 
-                  key={idx}
-                  className={`group flex items-center gap-2 p-3 cursor-pointer hover:bg-muted/50 transition-colors ${activeCardIndex === idx ? 'bg-primary/5 border-l-2 border-l-primary' : 'border-l-2 border-l-transparent'}`}
-                  onClick={() => setActiveCardIndex(idx)}
-                >
-                  <GripVertical className="h-4 w-4 text-muted-foreground opacity-50 cursor-grab" />
-                  <div className="flex-1 truncate text-sm font-medium">
-                    {card.title || 'Untitled Card'}
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteCard(idx)
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
+           {contentCards.length === 0 ? (
+             <div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground">
+               <FileText className="h-8 w-8 mb-2 opacity-20" />
+               <p className="text-sm">No content cards yet.</p>
+               <Button variant="link" size="sm" onClick={handleAddCard}>Create your first card</Button>
+             </div>
+           ) : (
+             <ul className="divide-y">
+               {contentCards.map((card, idx) => {
+                 const fullIndex = data.cards.findIndex(c => c === card);
+                 const hasError = !!errors && Object.keys(errors).some(key => key.startsWith(`cards.${fullIndex}.`));
+                 return (
+                   <li 
+                     key={idx}
+                     className={`group flex items-center gap-2 p-3 cursor-pointer hover:bg-muted/50 transition-colors ${activeCardIndex === idx ? 'bg-primary/5 border-l-2 border-l-primary' : hasError ? 'border-l-2 border-l-destructive' : 'border-l-2 border-l-transparent'}`}
+                     onClick={() => setActiveCardIndex(idx)}
+                   >
+                     <GripVertical className="h-4 w-4 text-muted-foreground opacity-50 cursor-grab" />
+                     <div className="flex-1 truncate text-sm font-medium">
+                       {card.title || 'Untitled Card'}
+                     </div>
+                     <Button 
+                       variant="ghost" 
+                       size="icon" 
+                       className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
+                       onClick={(e) => {
+                         e.stopPropagation()
+                         handleDeleteCard(idx)
+                       }}
+                     >
+                       <Trash2 className="h-4 w-4" />
+                     </Button>
+                   </li>
+                 );
+               })}
+             </ul>
+           )}
         </CardContent>
       </Card>
 
