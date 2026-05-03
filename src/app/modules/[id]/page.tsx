@@ -1,3 +1,5 @@
+'use client';
+
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { ModulePlayScreen } from '@/components/module-play-screen'
@@ -13,5 +15,5 @@ export default function ModulePlayPage({ params }: { params: { id: string } }) {
       <ModulePlayScreen moduleId={params.id} pathId={pathId} />
       <Footer />
     </main>
-  )
+  );
 }
