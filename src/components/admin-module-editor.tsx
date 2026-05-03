@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 import {
   Plus,
   Edit2,
@@ -24,10 +25,7 @@ export function AdminModuleEditor() {
   const [modules, setModules] = useState<Module[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<'all' | ModuleStatus>('all')
-  
-  // Wizard state
-  const [isWizardOpen, setIsWizardOpen] = useState(false)
-  const [moduleToEdit, setModuleToEdit] = useState<any>(null)
+  const router = useRouter()
 
   const fetchModules = async () => {
     setIsLoading(true)
@@ -50,8 +48,6 @@ export function AdminModuleEditor() {
 
   const filteredModules =
     filterStatus === 'all' ? modules : modules.filter((m) => m.status === filterStatus)
-
-  const getStatusColor = (status: ModuleStatus) => {
     switch (status) {
       case 'published':
         return 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200'
@@ -91,6 +87,8 @@ export function AdminModuleEditor() {
       if (!res.ok) throw new Error('Failed to fetch module details')
       const fullModule = await res.json()
       
+      // For now, we'll keep the wizard for editing but navigate to new page for creation
+      // In a full implementation, we might want a dedicated edit page too
       setModuleToEdit(fullModule)
       setIsWizardOpen(true)
     } catch (error) {
@@ -100,9 +98,12 @@ export function AdminModuleEditor() {
   }
 
   const openNewModuleWizard = () => {
-    setModuleToEdit(null)
-    setIsWizardOpen(true)
+    router.push('/admin/modules/new');
   }
+
+  // Wizard state - keeping for edit functionality
+  const [isWizardOpen, setIsWizardOpen] = useState(false)
+  const [moduleToEdit, setModuleToEdit] = useState<any>(null)
 
   const closeWizard = () => {
     setIsWizardOpen(false)
