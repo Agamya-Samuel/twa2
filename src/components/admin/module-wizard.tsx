@@ -220,7 +220,7 @@ export function ModuleWizard({ initialModule, onComplete, onCancel }: ModuleWiza
               toast.info('Please use the Continue button to validate this step first.')
             }
           }} 
-          className="mb-8 hidden md:block w-3/4  mx-auto" 
+           className="mb-12 hidden md:block w-3/4  mx-auto"
         />
         
         <div className="min-h-[500px]">
