@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -201,6 +202,8 @@ const MenuBar = ({ editor }: { editor: any }) => {
 }
 
 export function RichTextEditor({ value, onChange, placeholder = 'Write something...', className }: RichTextEditorProps) {
+  const prevValueRef = useRef(value)
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -228,6 +231,16 @@ export function RichTextEditor({ value, onChange, placeholder = 'Write something
       onChange(editor.getHTML())
     },
   })
+
+  useEffect(() => {
+    if (editor && value !== prevValueRef.current) {
+      const currentContent = editor.getHTML()
+      if (currentContent !== value) {
+        editor.commands.setContent(value)
+      }
+    }
+    prevValueRef.current = value
+  }, [value, editor])
 
   return (
     <div className={cn("border rounded-md shadow-sm overflow-hidden flex flex-col focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2", className)}>
