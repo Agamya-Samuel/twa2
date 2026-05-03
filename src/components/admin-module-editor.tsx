@@ -117,7 +117,7 @@ export function AdminModuleEditor() {
   if (isWizardOpen) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="max-w-6xl mx-auto py-8 px-4">
+        <div className="max-w-7xl mx-auto py-8 px-4">
           <ModuleWizard 
             initialModule={moduleToEdit} 
             onCancel={closeWizard} 
@@ -130,7 +130,7 @@ export function AdminModuleEditor() {
 
   return (
     <section className="w-full bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-10">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

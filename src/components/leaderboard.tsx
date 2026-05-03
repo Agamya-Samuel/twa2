@@ -39,7 +39,7 @@ export function Leaderboard() {
 
   return (
     <section className="w-full bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-10 space-y-4">
           <h1 className="text-3xl font-bold text-foreground sm:text-4xl flex items-center gap-2">

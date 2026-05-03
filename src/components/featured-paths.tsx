@@ -34,7 +34,7 @@ export function FeaturedPaths() {
             <h2 className="text-balance text-3xl font-bold text-foreground sm:text-4xl tracking-tight">
               Curated Learning Paths
             </h2>
-            <p className="text-lg text-foreground/60 max-w-2xl">
+            <p className="text-lg text-foreground/60 max-w-7xl">
               Master complex topics with structured journeys designed by Wikipedia experts.
             </p>
           </div>

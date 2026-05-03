@@ -5,7 +5,7 @@ import { ArrowRight, Zap } from 'lucide-react'
 export function CallToAction() {
   return (
     <section className="w-full bg-primary py-20 px-4 sm:px-6 lg:px-8 text-primary-foreground">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-7xl">
         <div className="space-y-8 text-center">
           {/* Icon */}
           <div className="flex justify-center">

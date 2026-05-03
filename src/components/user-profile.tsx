@@ -81,7 +81,7 @@ export function UserProfile() {
 
   return (
     <section className="w-full bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         {/* Profile Header */}
         <div className="mb-10 rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
@@ -110,7 +110,7 @@ export function UserProfile() {
                   </p>
                 </div>
               </div>
-              <p className="text-foreground/70 max-w-2xl leading-relaxed">
+              <p className="text-foreground/70 max-w-7xl leading-relaxed">
                 {userData?.bio || 'Wikipedia active editor committed to open knowledge and educational excellence.'}
               </p>
             </div>
@@ -170,7 +170,7 @@ export function UserProfile() {
 
         {/* Action Tabs */}
         <Tabs defaultValue="achievements" className="w-full space-y-8">
-          <TabsList className="bg-muted/50 p-1 rounded-xl w-full max-w-md mx-auto grid grid-cols-3">
+          <TabsList className="bg-muted/50 p-1 rounded-xl w-full max-w-7xl mx-auto grid grid-cols-3">
             <TabsTrigger value="achievements" className="rounded-lg py-2.5">Achievements</TabsTrigger>
             <TabsTrigger value="certificates" className="rounded-lg py-2.5">Certificates</TabsTrigger>
             <TabsTrigger value="activity" className="rounded-lg py-2.5">Activity</TabsTrigger>

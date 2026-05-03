@@ -129,7 +129,7 @@ export function ModulePlayScreen({ moduleId, pathId }: ModulePlayScreenProps) {
 
   return (
     <section className="w-full bg-background py-8 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8 space-y-4">
           <div className="flex items-start justify-between gap-4">
@@ -259,7 +259,7 @@ export function ModulePlayScreen({ moduleId, pathId }: ModulePlayScreenProps) {
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-3xl font-extrabold text-foreground">{currentCard.title}</h3>
-                  <p className="text-xl text-foreground/70 max-w-md mx-auto">{currentCard.content}</p>
+                  <p className="text-xl text-foreground/70 max-w-7xl mx-auto">{currentCard.content}</p>
                 </div>
                 <div className="flex items-center gap-2 text-secondary font-bold">
                   <Award className="h-6 w-6" />

@@ -18,7 +18,7 @@ export function ReviewStep({ data }: ReviewStepProps) {
   const achievementCount = data.cards.filter(c => c.type === 'achievement').length
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <div className="mb-8">
         <h2 className="text-2xl font-bold mb-2">Review & Publish</h2>
         <p className="text-muted-foreground">Review your module structure before publishing to the live database.</p>

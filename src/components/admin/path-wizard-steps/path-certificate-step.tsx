@@ -20,7 +20,7 @@ export function PathCertificateStep({ data, updateData, errors }: PathCertificat
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       <div>
         <h2 className="text-xl font-semibold">Completion Certificate</h2>
         <p className="text-muted-foreground text-sm">
