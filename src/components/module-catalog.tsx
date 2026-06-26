@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,28 +12,73 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Search, Users, Star, ChevronRight } from 'lucide-react'
+import { Search, Users, Star, ChevronRight, BookOpen, FlaskConical, Palette, ScrollText, Loader2 } from 'lucide-react'
 
-// Mock data removed - components will fetch from database
-// TODO: Implement database query to fetch all modules
-const ALL_MODULES: any[] = []
-
-const CATEGORIES = ['All', 'History', 'Science', 'Art & Culture']
+const CATEGORIES = ['All', 'History', 'Science', 'Art & Culture', 'General']
 const DIFFICULTIES = ['All', 'Beginner', 'Intermediate', 'Advanced']
 
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  'History': ScrollText,
+  'Science': FlaskConical,
+  'Art & Culture': Palette,
+  'General': BookOpen,
+}
+
+interface ModuleData {
+  id: number
+  title: string
+  description: string
+  difficulty: string
+  category: string
+  status: string
+  authorId: string
+  estimatedTime: string | null
+  participants: number
+  avgScore: number
+  views: number
+  rating: number | null
+  badges: number
+  color: string | null
+  accentColor: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export function ModuleCatalog() {
+  const [modules, setModules] = useState<ModuleData[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [selectedDifficulty, setSelectedDifficulty] = useState('All')
 
-  const filteredModules = ALL_MODULES.filter((module) => {
+  useEffect(() => {
+    fetch('/api/modules')
+      .then((res) => res.json())
+      .then((data) => {
+        setModules(data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const filteredModules = modules.filter((module) => {
     const matchesSearch =
       module.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      module.description.toLowerCase().includes(searchQuery.toLowerCase())
+      module.description?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = selectedCategory === 'All' || module.category === selectedCategory
     const matchesDifficulty = selectedDifficulty === 'All' || module.difficulty === selectedDifficulty
     return matchesSearch && matchesCategory && matchesDifficulty
   })
+
+  if (loading) {
+    return (
+      <section className="w-full bg-background py-12 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="w-full bg-background py-12 px-4 sm:px-6 lg:px-8">
@@ -41,7 +87,7 @@ export function ModuleCatalog() {
         <div className="mb-10 space-y-4">
           <h1 className="text-3xl font-bold text-foreground sm:text-4xl">All Modules</h1>
           <p className="text-lg text-foreground/60">
-            Explore {ALL_MODULES.length} learning modules across multiple subjects
+            Explore {modules.length} learning modules across multiple subjects
           </p>
         </div>
 
@@ -96,52 +142,53 @@ export function ModuleCatalog() {
         {filteredModules.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredModules.map((module) => {
-              const IconComponent = module.icon
+              const IconComponent = CATEGORY_ICONS[module.category] || BookOpen
               return (
-                <Card
-                  key={module.id}
-                  className="group overflow-hidden transition-all hover:shadow-lg hover:border-primary"
-                >
-                  <CardHeader className={`${module.color} pb-3`}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className={`rounded-lg p-2 ${module.accentColor} bg-background/50`}>
-                        <IconComponent className="h-5 w-5" />
-                      </div>
-                      <span className="text-xs font-semibold text-foreground/60">{module.difficulty}</span>
-                    </div>
-                    <CardTitle className="text-lg">{module.title}</CardTitle>
-                    <CardDescription className="line-clamp-2">{module.category}</CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4 pt-4">
-                    <p className="text-sm text-foreground/70 line-clamp-3">{module.description}</p>
-
-                    {/* Stats */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1 text-foreground/60">
-                          <Users className="h-3 w-3" />
-                          <span>{module.participants.toLocaleString()}</span>
+                <Link href={`/modules/${module.id}`} key={module.id}>
+                  <Card
+                    className="group overflow-hidden transition-all hover:shadow-lg hover:border-primary cursor-pointer"
+                  >
+                    <CardHeader className={`${module.color || 'bg-primary/10'} pb-3`}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className={`rounded-lg p-2 ${module.accentColor || 'bg-primary/20'} bg-background/50`}>
+                          <IconComponent className="h-5 w-5" />
                         </div>
-                        <div className="flex items-center gap-1 text-foreground/60">
-                          <Star className="h-3 w-3" />
-                          <span>{module.rating}</span>
+                        <span className="text-xs font-semibold text-foreground/60">{module.difficulty}</span>
+                      </div>
+                      <CardTitle className="text-lg">{module.title}</CardTitle>
+                      <CardDescription className="line-clamp-2">{module.category}</CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4 pt-4">
+                      <p className="text-sm text-foreground/70 line-clamp-3">{module.description}</p>
+
+                      {/* Stats */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-1 text-foreground/60">
+                            <Users className="h-3 w-3" />
+                            <span>{module.participants.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-foreground/60">
+                            <Star className="h-3 w-3" />
+                            <span>{module.rating ?? 'N/A'}</span>
+                          </div>
+                        </div>
+
+                        {/* Badges */}
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-medium text-foreground/60">{module.badges} badges available</span>
                         </div>
                       </div>
 
-                      {/* Badges */}
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs font-medium text-foreground/60">{module.badges} badges available</span>
-                      </div>
-                    </div>
-
-                    {/* CTA Button */}
-                    <Button className="w-full bg-primary text-primary-foreground transition-all hover:bg-primary/90 group-hover:gap-2">
-                      <span>View Module</span>
-                      <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Button>
-                  </CardContent>
-                </Card>
+                      {/* CTA Button */}
+                      <Button className="w-full bg-primary text-primary-foreground transition-all hover:bg-primary/90 group-hover:gap-2">
+                        <span>View Module</span>
+                        <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Link>
               )
             })}
           </div>
