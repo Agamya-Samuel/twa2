@@ -34,7 +34,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-sm text-foreground/60 hover:text-primary transition-colors">
+                <Link href="/modules" className="text-sm text-foreground/60 hover:text-primary transition-colors">
                   Modules
                 </Link>
               </li>

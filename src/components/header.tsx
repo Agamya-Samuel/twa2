@@ -27,7 +27,7 @@ export function Header() {
 
           <nav className="hidden gap-8 md:flex">
             <Link
-              href="#modules"
+              href="/modules"
               className="text-sm font-medium text-foreground transition-colors hover:text-primary"
             >
               Modules
@@ -157,7 +157,7 @@ export function Header() {
         {isOpen && (
           <nav className="border-t border-border py-4 md:hidden">
             <div className="flex flex-col gap-4">
-              <Link href="#modules" className="text-sm font-medium">
+              <Link href="/modules" className="text-sm font-medium">
                 Modules
               </Link>
               <Link href="#leaderboard" className="text-sm font-medium">
