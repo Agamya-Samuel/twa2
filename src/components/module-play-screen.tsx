@@ -40,17 +40,23 @@ export function ModulePlayScreen({ moduleId, pathId }: ModulePlayScreenProps) {
     async function fetchModule() {
       try {
         const res = await fetch(`/api/modules/${moduleId}`)
-        if (!res.ok) throw new Error('Failed to fetch module')
+        if (!res.ok) {
+          const body = await res.text()
+          console.error(`Failed to fetch module ${moduleId}: HTTP ${res.status}`, body)
+          throw new Error(`Failed to fetch module: HTTP ${res.status}`)
+        }
         const data = await res.json()
         setModule(data)
       } catch (error) {
-        console.error(error)
+        console.error('Module fetch error:', error)
         toast.error('Failed to load module')
       } finally {
         setLoading(false)
       }
     }
-    fetchModule()
+    if (moduleId) {
+      fetchModule()
+    }
   }, [moduleId])
 
   const regularCards = module?.cards?.filter((c: any) => c.type !== 'achievement') || []
