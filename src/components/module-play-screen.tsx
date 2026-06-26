@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import * as LucideIcons from 'lucide-react'
 import {
   ChevronRight,
   ChevronLeft,
@@ -32,6 +33,8 @@ export function ModulePlayScreen({ moduleId, pathId }: ModulePlayScreenProps) {
   const [showExplanation, setShowExplanation] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [isFinishing, setIsFinishing] = useState(false)
+  const [showAchievements, setShowAchievements] = useState(false)
+  const [earnedAchievements, setEarnedAchievements] = useState<any[]>([])
 
   useEffect(() => {
     async function fetchModule() {
@@ -50,8 +53,10 @@ export function ModulePlayScreen({ moduleId, pathId }: ModulePlayScreenProps) {
     fetchModule()
   }, [moduleId])
 
-  const currentCard = module?.cards?.[currentCardIndex]
-  const totalCards = module?.cards?.length || 0
+  const regularCards = module?.cards?.filter((c: any) => c.type !== 'achievement') || []
+  const achievementCards = module?.cards?.filter((c: any) => c.type === 'achievement') || []
+  const currentCard = regularCards?.[currentCardIndex]
+  const totalCards = regularCards?.length || 0
   const progressPercentage = totalCards > 0 ? ((currentCardIndex + 1) / totalCards) * 100 : 0
 
   const saveProgress = async (status: 'in_progress' | 'completed') => {
@@ -107,12 +112,30 @@ export function ModulePlayScreen({ moduleId, pathId }: ModulePlayScreenProps) {
     setIsFinishing(true)
     await saveProgress('completed')
     toast.success('Module completed!')
-    // Redirect logic: back to path or dashboard
+    
+    // Show achievements before redirect
+    if (achievementCards.length > 0) {
+      setEarnedAchievements(achievementCards)
+      setShowAchievements(true)
+      setIsFinishing(false)
+      return
+    }
+    
+    // Redirect if no achievements
+    redirectAfterCompletion()
+  }
+
+  const redirectAfterCompletion = () => {
     if (pathId) {
       window.location.href = `/paths/${pathId}`
     } else {
       window.location.href = '/dashboard'
     }
+  }
+
+  const handleDismissAchievements = () => {
+    setShowAchievements(false)
+    redirectAfterCompletion()
   }
 
   if (loading) {
@@ -172,11 +195,23 @@ export function ModulePlayScreen({ moduleId, pathId }: ModulePlayScreenProps) {
             {/* Content Style Rendering */}
             {currentCard.type === 'content' && (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                {currentCard.icon && <div className="text-6xl mb-6">{currentCard.icon}</div>}
+                {currentCard.icon && (
+                  <div className="text-6xl mb-6">
+                    {(() => {
+                      const iconName = currentCard.icon
+                        .split('-')
+                        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                        .join('')
+                      const IconComponent = LucideIcons[iconName as keyof typeof LucideIcons] as React.ComponentType<any>
+                      return IconComponent ? <IconComponent className="w-24 h-24" /> : currentCard.icon
+                    })()}
+                  </div>
+                )}
                 <div className="prose prose-slate dark:prose-invert max-w-none">
-                  <p className="text-xl leading-relaxed text-foreground/90 whitespace-pre-wrap">
-                    {currentCard.content}
-                  </p>
+                  <div 
+                    className="text-xl leading-relaxed text-foreground/90"
+                    dangerouslySetInnerHTML={{ __html: currentCard.content }}
+                  />
                 </div>
               </div>
             )}
@@ -249,26 +284,44 @@ export function ModulePlayScreen({ moduleId, pathId }: ModulePlayScreenProps) {
                 )}
               </div>
             ))}
-
-            {/* Achievement Style Rendering */}
-            {currentCard.type === 'achievement' && (
-              <div className="flex flex-col items-center justify-center py-12 text-center space-y-6 animate-in zoom-in duration-700">
-                <div className="relative">
-                  <div className="absolute inset-0 animate-ping rounded-full bg-secondary/20" />
-                  <div className="text-9xl relative z-10">{currentCard.icon || '🏆'}</div>
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-3xl font-extrabold text-foreground">{currentCard.title}</h3>
-                  <p className="text-xl text-foreground/70 max-w-7xl mx-auto">{currentCard.content}</p>
-                </div>
-                <div className="flex items-center gap-2 text-secondary font-bold">
-                  <Award className="h-6 w-6" />
-                  <span>Achievement Unlocked!</span>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
+
+        {/* Achievement Overlay - Shows after module completion */}
+        {showAchievements && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 animate-in fade-in duration-300">
+            <div className="bg-card rounded-2xl border border-border p-8 max-w-lg w-full mx-4 space-y-6 animate-in zoom-in-95 duration-500">
+              <div className="text-center space-y-4">
+                <div className="text-8xl">🏆</div>
+                <h2 className="text-3xl font-extrabold text-foreground">Module Complete!</h2>
+                <p className="text-foreground/60">You've earned the following achievements</p>
+              </div>
+
+              <div className="space-y-4">
+                {earnedAchievements.map((achievement: any, index: number) => (
+                  <div 
+                    key={achievement.id || index}
+                    className="flex items-center gap-4 rounded-xl border border-secondary/30 bg-secondary/5 p-4 animate-in slide-in-from-bottom-4 duration-500"
+                    style={{ animationDelay: `${index * 200}ms` }}
+                  >
+                    <div className="text-5xl">{achievement.icon || '🏅'}</div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg text-foreground">{achievement.title}</h3>
+                      <p className="text-foreground/60">{achievement.content}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button 
+                onClick={handleDismissAchievements}
+                className="w-full py-6 text-lg font-bold"
+              >
+                Continue
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Navigation Controls */}
         <div className="flex items-center justify-between gap-6">
