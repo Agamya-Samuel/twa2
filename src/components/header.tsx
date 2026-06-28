@@ -1,18 +1,32 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { BookOpen, Menu, X, LogOut, User, Settings, ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import { ThemeSwitcher } from '@/components/theme-switcher'
 import { Button } from '@/components/ui/button'
 
+const NAV_ITEMS = [
+  { href: '/modules', label: 'Modules' },
+  { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/about', label: 'About' },
+  { href: '/contribute', label: 'Contribute', requireAuth: true },
+]
+
 export function Header() {
   const { data: session, status } = useSession()
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
 
   const userRole = session?.user?.role || 'user'
+
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/'
+    return pathname.startsWith(href)
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur">
@@ -25,41 +39,30 @@ export function Header() {
             <span className="hidden font-bold text-foreground sm:inline-block">WikiQuest</span>
           </Link>
 
-          <nav className="hidden gap-8 md:flex">
-            <Link
-              href="/modules"
-              className="text-sm font-medium text-foreground transition-colors hover:text-primary"
-            >
-              Modules
-            </Link>
-            <Link
-              href="#leaderboard"
-              className="text-sm font-medium text-foreground transition-colors hover:text-primary"
-            >
-              Leaderboard
-            </Link>
-            <Link
-              href="#about"
-              className="text-sm font-medium text-foreground transition-colors hover:text-primary"
-            >
-              About
-            </Link>
-            {userRole === 'admin' && (
-              <Link
-                href="/admin"
-                className="text-sm font-medium text-foreground transition-colors hover:text-primary"
-              >
-                Admin
-              </Link>
-            )}
-            {session && (
-              <Link
-                href="/contribute"
-                className="text-sm font-medium text-foreground transition-colors hover:text-primary"
-              >
-                Contribute
-              </Link>
-            )}
+          <nav className="hidden md:flex items-center gap-1">
+            {NAV_ITEMS.map((item) => {
+              if (item.requireAuth && !session) return null
+              const active = isActive(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`relative px-3 py-5 text-sm font-medium transition-colors ${
+                    active
+                      ? 'text-[#36c]'
+                      : 'text-foreground hover:text-primary'
+                  }`}
+                >
+                  {item.label}
+                  {active && (
+                    <span
+                      className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[#36c]"
+                      style={{ height: '2px' }}
+                    />
+                  )}
+                </Link>
+              )
+            })}
           </nav>
 
           <div className="flex items-center gap-2 md:gap-4">
@@ -156,27 +159,42 @@ export function Header() {
 
         {isOpen && (
           <nav className="border-t border-border py-4 md:hidden">
-            <div className="flex flex-col gap-4">
-              <Link href="/modules" className="text-sm font-medium">
-                Modules
-              </Link>
-              <Link href="#leaderboard" className="text-sm font-medium">
-                Leaderboard
-              </Link>
-              <Link href="#about" className="text-sm font-medium">
-                About
-              </Link>
+            <div className="flex flex-col gap-1">
+              {NAV_ITEMS.map((item) => {
+                if (item.requireAuth && !session) return null
+                const active = isActive(item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                      active
+                        ? 'text-[#36c] bg-[#36c]/5'
+                        : 'text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                )
+              })}
               {session ? (
                 <>
                   {userRole === 'admin' && (
-                    <Link href="/admin" className="text-sm font-medium">
+                    <Link
+                      href="/admin"
+                      className={`px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                        isActive('/admin') ? 'text-[#36c] bg-[#36c]/5' : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
                       Admin
                     </Link>
                   )}
-                  <Link href="/contribute" className="text-sm font-medium">
-                    Contribute
-                  </Link>
-                  <Link href="/profile" className="text-sm font-medium">
+                  <Link
+                    href="/profile"
+                    className={`px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                      isActive('/profile') ? 'text-[#36c] bg-[#36c]/5' : 'text-foreground hover:bg-muted'
+                    }`}
+                  >
                     Profile
                   </Link>
                   <div className="flex flex-col gap-2 pt-2">
